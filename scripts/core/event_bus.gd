@@ -12,3 +12,7 @@ signal player_state_changed(new_state: String)
 signal player_health_changed(new_health: int, max_health: int)
 signal player_interacted(target_object: Node)
 signal level_transition_requested(target_scene_path: String)
+
+# --- Persistence ---
+signal game_saved(slot: int)
+signal game_loaded(slot: int)
