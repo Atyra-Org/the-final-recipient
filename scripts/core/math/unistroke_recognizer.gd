@@ -32,11 +32,17 @@ func recognize(points: Array[Vector2]) -> Dictionary:
 	var candidate := normalize(points)
 	if candidate.is_empty():
 		return {"name": "", "score": 0.0}
+	# $1 compares point index to point index, so a stroke drawn in the opposite
+	# direction scores near-zero on its own template. Normalising the reversed
+	# stroke and taking the better of the two makes matching direction-invariant.
+	var reversed := normalize(_reversed(points))
 
 	var best_name := ""
 	var best_score := 0.0
 	for template in _templates:
 		var score := _score_at_best_angle(candidate, template["points"])
+		if not reversed.is_empty():
+			score = maxf(score, _score_at_best_angle(reversed, template["points"]))
 		if score > best_score:
 			best_score = score
 			best_name = template["name"]
@@ -146,6 +152,13 @@ func path_distance(a: Array[Vector2], b: Array[Vector2]) -> float:
 	for i in n:
 		d += a[i].distance_to(b[i])
 	return d / float(n)
+
+
+func _reversed(points: Array[Vector2]) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for i in range(points.size() - 1, -1, -1):
+		out.append(points[i])
+	return out
 
 
 # --- Matching -------------------------------------------------------------

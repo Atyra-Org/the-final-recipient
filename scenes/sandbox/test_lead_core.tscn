@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://c8sandboxleadcore"]
+[gd_scene format=3 uid="uid://b52ay6y3a7vkw"]
 
 [ext_resource type="Script" path="res://scenes/sandbox/test_lead_core.gd" id="1_sandbox"]
 
