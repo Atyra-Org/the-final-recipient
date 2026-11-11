@@ -14,6 +14,7 @@ func _initialize() -> void:
 	_case_a_event_bus()
 	_case_b_horizontal_line()
 	_case_c_invalid_stroke()
+	_case_d_direction_invariance()
 	print("=== %d checks, %d failed ===" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -115,3 +116,62 @@ func _case_c_invalid_stroke() -> void:
 	var after: Dictionary = recognizer.recognize([Vector2(0, 0), Vector2(5, 0), Vector2(9, 1), Vector2(14, 0)])
 	_check("degenerate template rejected, recognizer still functional",
 		after["name"] != "bogus" and after["score"] >= 0.0, str(after))
+
+
+# --- Case D ------------------------------------------------------------------
+
+func _case_d_direction_invariance() -> void:
+	print("[Case D] stroke direction must not change the match")
+	var recognizer = Recognizer.new()
+
+	var circle := _closed_circle(60, 90.0)
+	var circle_ccw: Array[Vector2] = []
+	for p in circle:
+		circle_ccw.append(Vector2(320.0, 180.0) * 2.0 - p)  # mirror => reversed winding
+	var tri := _closed_triangle(90.0)
+	var tri_ccw: Array[Vector2] = []
+	for p in tri:
+		tri_ccw.append(Vector2(320.0, 180.0) * 2.0 - p)
+
+	var cw_result: Dictionary = recognizer.recognize(circle)
+	var ccw_result: Dictionary = recognizer.recognize(circle_ccw)
+	print("  -> circle CW  = %s" % [cw_result])
+	print("  -> circle CCW = %s" % [ccw_result])
+	_check("circle CW -> circle", cw_result["name"] == "circle" and cw_result["score"] >= 0.75, str(cw_result))
+	_check("circle CCW -> circle", ccw_result["name"] == "circle" and ccw_result["score"] >= 0.75, str(ccw_result))
+
+	var tri_cw_result: Dictionary = recognizer.recognize(tri)
+	var tri_ccw_result: Dictionary = recognizer.recognize(tri_ccw)
+	print("  -> triangle CW  = %s" % [tri_cw_result])
+	print("  -> triangle CCW = %s" % [tri_ccw_result])
+	_check("triangle CW -> triangle", tri_cw_result["name"] == "triangle" and tri_cw_result["score"] >= 0.75,
+		str(tri_cw_result))
+	_check("triangle CCW -> triangle",
+		tri_ccw_result["name"] == "triangle" and tri_ccw_result["score"] >= 0.75, str(tri_ccw_result))
+
+	# Cross-talk: a circle must never beat its own template on triangle.
+	_check("circle not mistaken for triangle", cw_result["name"] != "triangle" and ccw_result["name"] != "triangle")
+	_check("triangle not mistaken for circle", tri_cw_result["name"] != "circle" and tri_ccw_result["name"] != "circle")
+
+
+func _closed_circle(steps: int, radius: float) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for i in steps + 1:
+		var t := TAU * float(i) / float(steps)
+		out.append(Vector2(320.0 + cos(t) * radius, 180.0 + sin(t) * radius))
+	return out
+
+
+func _closed_triangle(radius: float) -> Array[Vector2]:
+	var corners: Array[Vector2] = [
+		Vector2(320.0, 180.0 - radius),
+		Vector2(320.0 + radius * 0.95, 180.0 + radius * 0.7),
+		Vector2(320.0 - radius * 0.95, 180.0 + radius * 0.7),
+		Vector2(320.0, 180.0 - radius),
+	]
+	var out: Array[Vector2] = []
+	for i in 3:
+		for k in 20:
+			out.append(corners[i].lerp(corners[i + 1], float(k) / 20.0))
+	out.append(corners[3])
+	return out
