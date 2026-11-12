@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bouxkjf80gwyu"]
+
+[ext_resource type="Script" uid="uid://cpkx5i1r7umlg" path="res://scripts/ui/interact.gd" id="1_i0raf"]
+
+[node name="Interact" type="Area2D" unique_id=1394885365]
+collision_layer = 2
+script = ExtResource("1_i0raf")
+interact_name = "Interact to Rafa"
