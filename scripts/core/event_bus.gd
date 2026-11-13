@@ -16,3 +16,8 @@ signal level_transition_requested(target_scene_path: String)
 # --- Persistence ---
 signal game_saved(slot: int)
 signal game_loaded(slot: int)
+
+# --- Inventory ---
+signal item_added(item_id: String, quantity: int)
+signal item_removed(item_id: String, quantity: int)
+signal inventory_updated()
