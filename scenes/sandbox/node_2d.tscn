@@ -9,4 +9,9 @@
 position = Vector2(444, 169)
 
 [node name="Player" parent="." unique_id=1067953716 instance=ExtResource("1_cx6ri")]
-position = Vector2(267, -155)
+position = Vector2(140, 101)
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1135148522]
+position = Vector2(-15, 4)
+scale = Vector2(2, 2)
+position_smoothing_enabled = true
