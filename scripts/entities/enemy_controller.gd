@@ -26,7 +26,7 @@ var facing_direction: String = "down"
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	add_to_group(&"enemy")
-	
+
 	if is_instance_valid(detection_area):
 		if not detection_area.body_entered.is_connected(_on_detection_area_body_entered):
 			detection_area.body_entered.connect(_on_detection_area_body_entered)
@@ -39,14 +39,27 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Jika tidak sedang chase, cek apakah ada player di dalam area secara aktif
+	if current_state == State.IDLE and is_instance_valid(detection_area):
+		_scan_for_target()
+
 	match current_state:
 		State.IDLE:
 			_process_idle_state(delta)
 		State.CHASE:
 			_process_chase_state(delta)
-	
+
 	move_and_slide()
 	_update_animation()
+
+
+## Scan secara aktif untuk menemukan target yang sudah ada di dalam area
+func _scan_for_target() -> void:
+	for body in detection_area.get_overlapping_bodies():
+		if body.is_in_group(target_group):
+			_transition_to_state(State.CHASE, body)
+			return
+
 
 func _process_idle_state(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
@@ -55,9 +68,9 @@ func _process_chase_state(delta: float) -> void:
 	if not is_instance_valid(target):
 		_transition_to_state(State.IDLE, null)
 		return
-	
+
 	var distance_to_target: float = global_position.distance_to(target.global_position)
-	
+
 	if distance_to_target > stop_distance:
 		var direction: Vector2 = global_position.direction_to(target.global_position)
 		var target_velocity: Vector2 = direction * move_speed
@@ -74,7 +87,7 @@ func _transition_to_state(new_state: State, new_target: Node2D) -> void:
 func _update_facing_direction(dir: Vector2) -> void:
 	if not is_instance_valid(animated_sprite):
 		return
-		
+
 	if absf(dir.x) > absf(dir.y):
 		facing_direction = "side"
 		animated_sprite.flip_h = (dir.x < 0.0)
@@ -89,11 +102,11 @@ func _update_facing_direction(dir: Vector2) -> void:
 func _update_animation() -> void:
 	if not is_instance_valid(animated_sprite) or animated_sprite.sprite_frames == null:
 		return
-	
+
 	var is_moving: bool = velocity.length() > 5.0
 	var anim_prefix: String = "run_" if is_moving else "idle_"
 	var anim_name: String = anim_prefix + facing_direction
-	
+
 	if animated_sprite.sprite_frames.has_animation(anim_name):
 		if animated_sprite.animation != anim_name or not animated_sprite.is_playing():
 			animated_sprite.play(anim_name)
