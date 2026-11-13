@@ -636,11 +636,9 @@ collision_mask = 5
 script = ExtResource("1_yewv4")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=981886510]
-position = Vector2(329, 178)
 shape = SubResource("CircleShape2D_6x8li")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1800357339]
-position = Vector2(330, 173)
 texture = ExtResource("1_rp718")
 hframes = 16
 vframes = 16
@@ -658,4 +656,3 @@ parameters/StateMachine/MoveState/RunState/blend_position = Vector2(0.005256295,
 parameters/StateMachine/MoveState/WalkState/blend_position = Vector2(0, -1)
 
 [node name="InteractComponent" parent="." unique_id=1267172175 instance=ExtResource("3_76oj4")]
-position = Vector2(330, 174)
