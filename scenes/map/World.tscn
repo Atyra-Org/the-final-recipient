@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://dou6ilekcn0rv"]
+
+[ext_resource type="PackedScene" uid="uid://br81nheuoyihg" path="res://scenes/characters/player.tscn" id="1_vu1y6"]
+[ext_resource type="PackedScene" uid="uid://dm3vxk0iy07d0" path="res://scenes/characters/npc.tscn" id="2_grsn6"]
+[ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="3_2a2jx"]
+
+[node name="Node" type="Node2D" unique_id=1134479886]
+
+[node name="Player" parent="." unique_id=1067953716 instance=ExtResource("1_vu1y6")]
+position = Vector2(298, 161)
+
+[node name="npc" parent="." unique_id=1287885675 instance=ExtResource("2_grsn6")]
+position = Vector2(567, 282)
+
+[node name="EnemyDummy" parent="." unique_id=2133058415 instance=ExtResource("3_2a2jx")]
+position = Vector2(348, 183)

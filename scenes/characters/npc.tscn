@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://dm3vxk0iy07d0"]
+
+[ext_resource type="Script" uid="uid://qe7dh7hx7l03" path="res://scripts/entities/npc.gd" id="1_bgitj"]
+[ext_resource type="Texture2D" uid="uid://bm12ll16om3vy" path="res://assets/sprites/characters/npc merchant C v02.png" id="1_ceaqc"]
+[ext_resource type="PackedScene" uid="uid://bouxkjf80gwyu" path="res://scenes/ui/interact.tscn" id="2_84hc2"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_4byay"]
+radius = 11.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_6x8li"]
+radius = 16.0
+
+[node name="npc" type="Node2D" unique_id=1287885675]
+script = ExtResource("1_bgitj")
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=1426266542]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=103326228]
+position = Vector2(0, 6)
+shape = SubResource("CircleShape2D_4byay")
+
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=2086584569]
+texture = ExtResource("1_ceaqc")
+hframes = 4
+vframes = 8
+frame = 20
+
+[node name="Interact" parent="." unique_id=1394885365 instance=ExtResource("2_84hc2")]
+interact_name = "Interact to Rafa"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interact" unique_id=1978856294]
+position = Vector2(0, 4)
+shape = SubResource("CircleShape2D_6x8li")
