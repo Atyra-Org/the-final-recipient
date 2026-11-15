@@ -6,6 +6,7 @@ signal died
 
 enum State {
 	IDLE,
+	WANDER,
 	CHASE,
 	ATTACK,
 	HURT,
@@ -13,12 +14,19 @@ enum State {
 }
 
 @export_category("Movement Settings")
-@export var move_speed: float = 80.0
+@export var move_speed: float = 110.0
 @export var acceleration: float = 700.0
 @export var friction: float = 900.0
 
+@export_category("Wander Settings")
+@export var can_wander: bool = true
+@export var wander_speed: float = 55.0
+@export var wander_radius: float = 90.0
+@export var idle_wait_min: float = 1.5
+@export var idle_wait_max: float = 3.5
+
 @export_category("Combat & Health")
-@export var max_health: int = 50
+@export var max_health: int = 30
 @export var attack_damage: int = 10
 @export var attack_range: float = 28.0
 @export var attack_cooldown: float = 1.0
@@ -35,10 +43,15 @@ var current_health: int = max_health
 var target: Node2D = null
 var facing_direction: String = "down"
 var attack_cooldown_timer: float = 0.0
+var spawn_position: Vector2 = Vector2.ZERO
+var wander_target_position: Vector2 = Vector2.ZERO
+var state_timer: float = 0.0
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	current_health = max_health
+	spawn_position = global_position
+	state_timer = randf_range(idle_wait_min, idle_wait_max)
 	add_to_group(&"enemy")
 	
 	if is_instance_valid(detection_area):
@@ -53,7 +66,6 @@ func _ready() -> void:
 
 	_update_animation()
 
-
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEAD:
 		return
@@ -64,6 +76,8 @@ func _physics_process(delta: float) -> void:
 	match current_state:
 		State.IDLE:
 			_process_idle_state(delta)
+		State.WANDER:
+			_process_wander_state(delta)
 		State.CHASE:
 			_process_chase_state(delta)
 		State.ATTACK:
@@ -76,10 +90,29 @@ func _physics_process(delta: float) -> void:
 
 func _process_idle_state(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+	
+	if not can_wander:
+		return
+		
+	state_timer -= delta
+	if state_timer <= 0.0:
+		_pick_new_wander_target()
+
+func _process_wander_state(delta: float) -> void:
+	state_timer -= delta
+	var distance_to_point: float = global_position.distance_to(wander_target_position)
+	
+	if distance_to_point <= 6.0 or state_timer <= 0.0 or is_on_wall():
+		_enter_idle_with_timer()
+		return
+		
+	var direction: Vector2 = global_position.direction_to(wander_target_position)
+	_update_facing_direction(direction)
+	velocity = velocity.move_toward(direction * wander_speed, acceleration * delta)
 
 func _process_chase_state(delta: float) -> void:
 	if not is_instance_valid(target):
-		_transition_to_state(State.IDLE, null)
+		_enter_idle_with_timer()
 		return
 	
 	var distance_to_target: float = global_position.distance_to(target.global_position)
@@ -94,7 +127,6 @@ func _process_chase_state(delta: float) -> void:
 		var target_velocity: Vector2 = direction * move_speed
 		velocity = velocity.move_toward(target_velocity, acceleration * delta)
 
-
 func _process_attack_state(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 
@@ -106,6 +138,19 @@ func _transition_to_state(new_state: State, new_target: Node2D = target) -> void
 		return
 	current_state = new_state
 	target = new_target
+
+func _enter_idle_with_timer() -> void:
+	state_timer = randf_range(idle_wait_min, idle_wait_max)
+	_transition_to_state(State.IDLE, null)
+
+func _pick_new_wander_target() -> void:
+	var random_angle: float = randf_range(0.0, TAU)
+	var random_distance: float = randf_range(wander_radius * 0.3, wander_radius)
+	var offset: Vector2 = Vector2.from_angle(random_angle) * random_distance
+	
+	wander_target_position = spawn_position + offset
+	state_timer = 4.0
+	_transition_to_state(State.WANDER, null)
 
 func _start_attack() -> void:
 	_transition_to_state(State.ATTACK)
@@ -128,7 +173,6 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 	else:
 		_transition_to_state(State.HURT)
 		_play_one_shot_animation("hurt")
-
 
 func _die() -> void:
 	current_state = State.DEAD
@@ -154,7 +198,6 @@ func _update_facing_direction(dir: Vector2) -> void:
 		animated_sprite.flip_h = false
 		facing_direction = "up" if dir.y < 0.0 else "down"
 
-
 func _update_animation() -> void:
 	if current_state in [State.ATTACK, State.HURT, State.DEAD]:
 		if current_state == State.ATTACK:
@@ -175,7 +218,6 @@ func _update_animation() -> void:
 	elif animated_sprite.sprite_frames.has_animation("idle_down"):
 		animated_sprite.play("idle_down")
 
-
 func _play_one_shot_animation(anim_name: String) -> void:
 	if not is_instance_valid(animated_sprite) or animated_sprite.sprite_frames == null:
 		_on_animated_sprite_animation_finished()
@@ -193,7 +235,7 @@ func _on_animated_sprite_animation_finished() -> void:
 			if is_instance_valid(target):
 				_transition_to_state(State.CHASE)
 			else:
-				_transition_to_state(State.IDLE, null)
+				_enter_idle_with_timer()
 		State.DEAD:
 			queue_free()
 
@@ -203,10 +245,5 @@ func _on_detection_area_body_entered(body: Node2D) -> void:
 
 func _on_detection_area_body_exited(body: Node2D) -> void:
 	if current_state != State.DEAD and body == target:
-		_transition_to_state(State.IDLE, null)
-		
-# test
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("attack"):
-		take_damage(10)
-		print("Health tersisa: ", current_health)
+		spawn_position = global_position
+		_enter_idle_with_timer()
