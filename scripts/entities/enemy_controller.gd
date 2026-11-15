@@ -37,6 +37,7 @@ enum State {
 @onready var detection_area: Area2D = $DetectionArea
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var body_collision: CollisionShape2D = $BodyCollision
+@onready var health_bar: ProgressBar = $HealthBar
 
 var current_state: State = State.IDLE
 var current_health: int = max_health
@@ -50,6 +51,11 @@ var state_timer: float = 0.0
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	current_health = max_health
+	if is_instance_valid(health_bar):
+		health_bar.max_value = max_health
+		health_bar.value = current_health
+		health_bar.visible = false
+		
 	spawn_position = global_position
 	state_timer = randf_range(idle_wait_min, idle_wait_max)
 	add_to_group(&"enemy")
@@ -168,6 +174,12 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 	health_changed.emit(current_health, max_health)
 	velocity = knockback_force
 	
+	if is_instance_valid(health_bar):
+		health_bar.visible = true
+		health_bar.value = current_health
+	
+	_spawn_damage_number(amount)
+	
 	if current_health == 0:
 		_die()
 	else:
@@ -184,6 +196,8 @@ func _die() -> void:
 	if is_instance_valid(detection_area):
 		detection_area.set_deferred("monitoring", false)
 		detection_area.set_deferred("monitorable", false)
+	if is_instance_valid(health_bar): 
+		health_bar.visible = false
 		
 	_play_one_shot_animation("death")
 
@@ -217,6 +231,29 @@ func _update_animation() -> void:
 			animated_sprite.play(anim_name)
 	elif animated_sprite.sprite_frames.has_animation("idle_down"):
 		animated_sprite.play("idle_down")
+		
+func _spawn_damage_number(amount: int) -> void:
+	var dmg_label: Label = Label.new()
+	dmg_label.text = str(amount)
+	dmg_label.z_index = 10 
+	
+	dmg_label.add_theme_font_size_override("font_size", 11)
+	dmg_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+	dmg_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	dmg_label.add_theme_constant_override("outline_size", 4)
+	
+	get_parent().add_child(dmg_label)
+	
+	var random_x: float = randf_range(-16.0, 8.0)
+	var random_y: float = randf_range(-32.0, -20.0)
+	dmg_label.global_position = global_position + Vector2(random_x, random_y)
+	
+	var tween: Tween = dmg_label.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(dmg_label, "global_position:y", dmg_label.global_position.y - 20.0, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(dmg_label, "modulate:a", 0.0, 0.5).set_delay(0.15)
+	
+	tween.chain().tween_callback(dmg_label.queue_free)
 
 func _play_one_shot_animation(anim_name: String) -> void:
 	if not is_instance_valid(animated_sprite) or animated_sprite.sprite_frames == null:
@@ -247,3 +284,9 @@ func _on_detection_area_body_exited(body: Node2D) -> void:
 	if current_state != State.DEAD and body == target:
 		spawn_position = global_position
 		_enter_idle_with_timer()
+		
+# testing
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("attack"):
+		take_damage(10)
+		print("HP tersisa: ", current_health)
