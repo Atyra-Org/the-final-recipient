@@ -7,5 +7,5 @@ func _ready() -> void:
 	interact.interact = _on_interact
 
 func _on_interact():
-	print("Kamu sudah berinteraksi dengan rafa hama!!!")
+	print("Kamu sudah interaksi dengan NPC")
 	interact.is_interactable = false

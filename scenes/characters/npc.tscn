@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bouxkjf80gwyu" path="res://scenes/ui/interact.tscn" id="2_84hc2"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_4byay"]
-radius = 11.0
+radius = 15.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_6x8li"]
 radius = 16.0
@@ -16,7 +16,7 @@ script = ExtResource("1_bgitj")
 [node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=1426266542]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=103326228]
-position = Vector2(0, 6)
+position = Vector2(0, 4)
 shape = SubResource("CircleShape2D_4byay")
 
 [node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=2086584569]
@@ -26,8 +26,7 @@ vframes = 8
 frame = 20
 
 [node name="Interact" parent="." unique_id=1394885365 instance=ExtResource("2_84hc2")]
-interact_name = "Interact to Rafa"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Interact" unique_id=1978856294]
-position = Vector2(0, 4)
+position = Vector2(0, 3)
 shape = SubResource("CircleShape2D_6x8li")
