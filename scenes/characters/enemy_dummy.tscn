@@ -375,6 +375,9 @@ radius = 12.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_ho4b0"]
 radius = 140.34
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ft4xp"]
+size = Vector2(24, 24)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ft4xp"]
 bg_color = Color(0.101960786, 0.101960786, 0.101960786, 0.8)
 
@@ -406,6 +409,15 @@ collision_mask = 2
 [node name="DetectionRadius" type="CollisionShape2D" parent="DetectionArea" unique_id=621206077]
 self_modulate = Color(1, 1, 0.4392157, 0.85490197)
 shape = SubResource("CircleShape2D_ho4b0")
+
+[node name="AttackHitbox" type="Area2D" parent="." unique_id=1777893636]
+collision_layer = 16
+collision_mask = 34
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox" unique_id=2093672473]
+shape = SubResource("RectangleShape2D_ft4xp")
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=1638160377]
 offset_left = -14.0
