@@ -278,28 +278,6 @@ func _on_animated_sprite_animation_finished() -> void:
 		State.DEAD:
 			queue_free()
 
-
-func _play_one_shot_animation(anim_name: String) -> void:
-	if not is_instance_valid(animated_sprite) or animated_sprite.sprite_frames == null:
-		_on_animated_sprite_animation_finished()
-		return
-		
-	if animated_sprite.sprite_frames.has_animation(anim_name):
-		if animated_sprite.animation != anim_name:
-			animated_sprite.play(anim_name)
-	else:
-		_on_animated_sprite_animation_finished()
-
-func _on_animated_sprite_animation_finished() -> void:
-	match current_state:
-		State.ATTACK, State.HURT:
-			if is_instance_valid(target):
-				_transition_to_state(State.CHASE)
-			else:
-				_transition_to_state(State.IDLE, null)
-		State.DEAD:
-			queue_free()
-
 func _on_detection_area_body_entered(body: Node2D) -> void:
 	if current_state != State.DEAD and body.is_in_group(target_group):
 		_transition_to_state(State.CHASE, body)
