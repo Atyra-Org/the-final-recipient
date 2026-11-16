@@ -7,10 +7,11 @@
 [node name="Node" type="Node2D" unique_id=1134479886]
 
 [node name="Player" parent="." unique_id=1067953716 instance=ExtResource("1_vu1y6")]
-position = Vector2(298, 161)
+position = Vector2(85, 124)
 
 [node name="npc" parent="." unique_id=1287885675 instance=ExtResource("2_grsn6")]
 position = Vector2(567, 282)
 
 [node name="EnemyDummy" parent="." unique_id=2133058415 instance=ExtResource("3_2a2jx")]
 position = Vector2(348, 183)
+collision_mask = 3

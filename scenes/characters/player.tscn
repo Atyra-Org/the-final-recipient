@@ -126,6 +126,93 @@ tracks/0/keys = {
 "values": [148, 149, 28, 28]
 }
 
+[sub_resource type="Animation" id="Animation_kmyvj"]
+resource_name = "dash_left"
+length = 0.4
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [64, 67, 68]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.099999994, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [true, true, true]
+}
+
+[sub_resource type="Animation" id="Animation_3wg1y"]
+resource_name = "dash_right"
+length = 0.4
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [64, 67, 68]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.099999994, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, false, false]
+}
+
+[sub_resource type="Animation" id="Animation_a2luo"]
+resource_name = "dash_up"
+length = 0.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 1,
+"values": [52, 53, 52, 52]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, false, true]
+}
+
 [sub_resource type="Animation" id="Animation_76oj4"]
 resource_name = "idle_down"
 loop_mode = 1
@@ -459,6 +546,9 @@ _data = {
 &"attack_left": SubResource("Animation_g66nw"),
 &"attack_right": SubResource("Animation_xrqxk"),
 &"attack_up": SubResource("Animation_d6tgn"),
+&"dash_left": SubResource("Animation_kmyvj"),
+&"dash_right": SubResource("Animation_3wg1y"),
+&"dash_up": SubResource("Animation_a2luo"),
 &"idle_down": SubResource("Animation_76oj4"),
 &"idle_left": SubResource("Animation_dyp2m"),
 &"idle_right": SubResource("Animation_atpat"),
@@ -636,6 +726,7 @@ collision_mask = 5
 script = ExtResource("1_yewv4")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=981886510]
+position = Vector2(0, 3)
 shape = SubResource("CircleShape2D_6x8li")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1800357339]
@@ -656,3 +747,4 @@ parameters/StateMachine/MoveState/RunState/blend_position = Vector2(0.005256295,
 parameters/StateMachine/MoveState/WalkState/blend_position = Vector2(0, -1)
 
 [node name="InteractComponent" parent="." unique_id=1267172175 instance=ExtResource("3_76oj4")]
+visible = false
