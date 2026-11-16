@@ -14,7 +14,7 @@ enum State {
 }
 
 @export_category("Movement Settings")
-@export var move_speed: float = 110.0
+@export var move_speed: float = 80.0
 @export var acceleration: float = 700.0
 @export var friction: float = 900.0
 
@@ -26,7 +26,7 @@ enum State {
 @export var idle_wait_max: float = 3.5
 
 @export_category("Combat & Health")
-@export var max_health: int = 30
+@export var max_health: int = 50
 @export var attack_damage: int = 10
 @export var attack_range: float = 28.0
 @export var attack_cooldown: float = 1.0
@@ -186,6 +186,7 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 		_transition_to_state(State.HURT)
 		_play_one_shot_animation("hurt")
 
+
 func _die() -> void:
 	current_state = State.DEAD
 	velocity = Vector2.ZERO
@@ -211,6 +212,7 @@ func _update_facing_direction(dir: Vector2) -> void:
 	else:
 		animated_sprite.flip_h = false
 		facing_direction = "up" if dir.y < 0.0 else "down"
+
 
 func _update_animation() -> void:
 	if current_state in [State.ATTACK, State.HURT, State.DEAD]:
@@ -276,6 +278,28 @@ func _on_animated_sprite_animation_finished() -> void:
 		State.DEAD:
 			queue_free()
 
+
+func _play_one_shot_animation(anim_name: String) -> void:
+	if not is_instance_valid(animated_sprite) or animated_sprite.sprite_frames == null:
+		_on_animated_sprite_animation_finished()
+		return
+		
+	if animated_sprite.sprite_frames.has_animation(anim_name):
+		if animated_sprite.animation != anim_name:
+			animated_sprite.play(anim_name)
+	else:
+		_on_animated_sprite_animation_finished()
+
+func _on_animated_sprite_animation_finished() -> void:
+	match current_state:
+		State.ATTACK, State.HURT:
+			if is_instance_valid(target):
+				_transition_to_state(State.CHASE)
+			else:
+				_transition_to_state(State.IDLE, null)
+		State.DEAD:
+			queue_free()
+
 func _on_detection_area_body_entered(body: Node2D) -> void:
 	if current_state != State.DEAD and body.is_in_group(target_group):
 		_transition_to_state(State.CHASE, body)
@@ -290,3 +314,5 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
 		take_damage(10)
 		print("HP tersisa: ", current_health)
+		_transition_to_state(State.IDLE, null)
+	
