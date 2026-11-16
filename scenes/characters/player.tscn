@@ -785,6 +785,8 @@ parameters/StateMachine/MoveState/WalkState/blend_position = Vector2(0, -1)
 visible = false
 
 [node name="AttackArea" type="Area2D" parent="." unique_id=159328187]
+collision_layer = 8
+collision_mask = 4
 script = ExtResource("4_dyp2m")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=170950682]
