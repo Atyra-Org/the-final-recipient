@@ -2,13 +2,19 @@ extends CharacterBody2D
 
 const WALK_SPEED = 100.0
 const RUN_SPEED = 200.0
+const DASH_DURATION = 0.2
+const DASH_SPEED = 400.0
 
 var input_vector := Vector2.ZERO
 var facing_direction := Vector2.DOWN # Menyimpan arah hadap terakhir player (default menghadap bawah)
 var is_running: bool = false
 var is_attacking: bool = false
+var is_dashing: bool = false
+var dash_timer: float = 0.0
+var dash_direction:= Vector2.ZERO
 
 @onready var animation_tree: AnimationTree = $AnimationTree
+@onready var animation_player: AnimationPlayer = $AnimationPlayer
 var state_machine: AnimationNodeStateMachinePlayback
 var move_state_machine: AnimationNodeStateMachinePlayback
 
@@ -28,6 +34,21 @@ func _physics_process(delta: float) -> void:
 
 	input_vector = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	is_running = Input.is_action_pressed("run")
+	
+	if Input.is_action_just_pressed("dash"):
+		_start_dash()
+		
+	if is_dashing:
+		dash_timer -= delta
+		velocity = dash_direction * DASH_SPEED
+		
+		move_and_slide()
+		
+		if dash_timer <= 0.0:
+			is_dashing = false
+			velocity = Vector2.ZERO
+			
+		return
 
 	if input_vector != Vector2.ZERO:
 		# Simpan arah gerak terakhir ke variabel facing_direction
@@ -59,3 +80,36 @@ func _start_attack() -> void:
 	# Gunakan facing_direction (arah hadap player) untuk animasi serangan
 	animation_tree.set("parameters/StateMachine/AttackState/blend_position", facing_direction)
 	state_machine.travel("AttackState")
+	
+func _play_dash_animation() -> void:
+	var animation_name: String
+	
+	if abs(dash_direction.x) > abs(dash_direction.y):
+		if dash_direction.x > 0:
+			animation_name = "dash_right"
+		else:
+			animation_name = "dash_left"
+	else:
+		if dash_direction.y > 0:
+			animation_name = "dash_down"
+		else:
+			animation_name = "dash_up"
+			
+	animation_player.play(animation_name)
+	
+func _start_dash() -> void:
+	if is_dashing or is_attacking:
+		return
+		
+	if input_vector == Vector2.ZERO:
+		return
+		
+	is_dashing = true
+	dash_timer = DASH_DURATION
+	
+	if input_vector != Vector2.ZERO:
+		dash_direction = input_vector.normalized()
+	else:
+		dash_direction = Vector2(facing_direction.x, -facing_direction.y).normalized()
+		
+	_play_dash_animation()
