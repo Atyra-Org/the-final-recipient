@@ -3,10 +3,6 @@
 [ext_resource type="Texture2D" uid="uid://c8cth052nm4as" path="res://assets/sprites/characters/AlricBase.png" id="1_rp718"]
 [ext_resource type="Script" uid="uid://cqerpn8a2vqfo" path="res://scripts/entities/player.gd" id="1_yewv4"]
 [ext_resource type="PackedScene" uid="uid://b43ty744bxaec" path="res://scenes/ui/interact_component.tscn" id="3_76oj4"]
-[ext_resource type="Script" uid="uid://d4igpkjd1wetw" path="res://scripts/entities/attack_area.gd" id="4_dyp2m"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_6x8li"]
-radius = 8.0
 
 [sub_resource type="Animation" id="Animation_yewv4"]
 length = 0.001
@@ -755,14 +751,13 @@ node_connections = [&"output", 0, &"StateMachine"]
 radius = 16.0
 height = 34.0
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_6x8li"]
+radius = 8.0
+
 [node name="Player" type="CharacterBody2D" unique_id=1067953716]
 collision_layer = 2
 collision_mask = 5
 script = ExtResource("1_yewv4")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=981886510]
-position = Vector2(0, 3)
-shape = SubResource("CircleShape2D_6x8li")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1800357339]
 texture = ExtResource("1_rp718")
@@ -781,25 +776,28 @@ parameters/StateMachine/MoveState/IdleState/blend_position = Vector2(0.011176825
 parameters/StateMachine/MoveState/RunState/blend_position = Vector2(0.005256295, -0.98636365)
 parameters/StateMachine/MoveState/WalkState/blend_position = Vector2(0, -1)
 
-[node name="InteractComponent" parent="." unique_id=1267172175 instance=ExtResource("3_76oj4")]
-visible = false
-
-[node name="AttackArea" type="Area2D" parent="." unique_id=159328187]
-collision_layer = 0
-collision_mask = 20
+[node name="Hitbox" type="Area2D" parent="." unique_id=159328187]
+collision_layer = 32
+collision_mask = 80
 input_pickable = false
 monitorable = false
-script = ExtResource("4_dyp2m")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=170950682]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=170950682]
 position = Vector2(0, -4)
 shape = SubResource("CapsuleShape2D_6x8li")
 debug_color = Color(0.6204538, 0.3545412, 1, 0.41960785)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=981886510]
+position = Vector2(0, 3)
+shape = SubResource("CircleShape2D_6x8li")
+
+[node name="InteractComponent" parent="." unique_id=1267172175 instance=ExtResource("3_76oj4")]
+visible = false
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=922704132]
 zoom = Vector2(2, 2)
 position_smoothing_enabled = true
 position_smoothing_speed = 3.5
 
-[connection signal="body_entered" from="AttackArea" to="AttackArea" method="_on_body_entered"]
-[connection signal="body_exited" from="AttackArea" to="AttackArea" method="_on_body_exited"]
+[connection signal="animation_finished" from="AnimationTree" to="." method="_on_animation_tree_animation_finished"]
+[connection signal="area_entered" from="Hitbox" to="." method="_on_hitbox_area_entered"]

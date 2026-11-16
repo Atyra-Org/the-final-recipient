@@ -12,14 +12,22 @@ var is_attacking: bool = false
 var is_dashing: bool = false
 var dash_timer: float = 0.0
 var dash_direction:= Vector2.ZERO
+var attack_damage: int = 10
+var hit_targets: Array[Node2D] = []
+@export var hitbox_offset: float = 20.0
 
 @onready var animation_tree: AnimationTree = $AnimationTree
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var hitbox: Area2D = $Hitbox
+@onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 var state_machine: AnimationNodeStateMachinePlayback
 var move_state_machine: AnimationNodeStateMachinePlayback
 
 func _ready() -> void:
 	add_to_group(&"player")
+	
+	hitbox.monitoring = false
+	
 	state_machine = animation_tree.get("parameters/StateMachine/playback")
 	move_state_machine = animation_tree.get("parameters/StateMachine/MoveState/playback")
 
@@ -77,8 +85,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		_start_attack()
 
 func _start_attack() -> void:
-	# Gunakan facing_direction (arah hadap player) untuk animasi serangan
+	hit_targets.clear()
+	
+	_update_hitbox_position()
 	animation_tree.set("parameters/StateMachine/AttackState/blend_position", facing_direction)
+	
+	is_attacking = true
+	hitbox.monitoring = true
+	
 	state_machine.travel("AttackState")
 	
 func _play_dash_animation() -> void:
@@ -113,3 +127,31 @@ func _start_dash() -> void:
 		dash_direction = Vector2(facing_direction.x, -facing_direction.y).normalized()
 		
 	_play_dash_animation()
+
+
+func _on_hitbox_area_entered(area: Area2D) -> void:
+	var enemy = area.get_parent()
+	
+	if not enemy.is_in_group("enemy"):
+		return
+		
+	if enemy in hit_targets:
+		return
+		
+	if enemy.has_method("take_damage"):
+		hit_targets.append(enemy)
+		enemy.take_damage(attack_damage)
+		
+		print("Player memberikan damage", attack_damage)
+
+
+func _on_animation_tree_animation_finished(anim_name: StringName) -> void:
+	if anim_name.begins_with("attack_"):
+		hitbox.monitoring = false
+		is_attacking = false
+		
+		print("Animasi selesai", anim_name)
+
+func _update_hitbox_position() -> void:
+	var attack_direction = Vector2(facing_direction.x, -facing_direction.y).normalized()
+	hitbox_shape.position = attack_direction * hitbox_offset

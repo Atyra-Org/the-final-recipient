@@ -30,8 +30,6 @@ enum State {
 @export var attack_damage: int = 10
 @export var attack_range: float = 28.0
 @export var attack_cooldown: float = 1.0
-@export var hitbox_offset: float = 18.0
-@export var attack_active_frames: Array[int] = [1, 2]
 
 @export_category("AI Detection")
 @export var target_group: StringName = &"player"
@@ -40,7 +38,6 @@ enum State {
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var body_collision: CollisionShape2D = $BodyCollision
 @onready var health_bar: ProgressBar = $HealthBar
-@onready var attack_hitbox: Area2D = $AttackHitbox
 
 var current_state: State = State.IDLE
 var current_health: int = max_health
@@ -50,7 +47,7 @@ var attack_cooldown_timer: float = 0.0
 var spawn_position: Vector2 = Vector2.ZERO
 var wander_target_position: Vector2 = Vector2.ZERO
 var state_timer: float = 0.0
-var hit_targets: Array[Node2D] = []
+
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
@@ -73,13 +70,6 @@ func _ready() -> void:
 	if is_instance_valid(animated_sprite):
 		if not animated_sprite.animation_finished.is_connected(_on_animated_sprite_animation_finished):
 			animated_sprite.animation_finished.connect(_on_animated_sprite_animation_finished)
-		if not animated_sprite.frame_changed.is_connected(_on_animated_sprite_frame_changed):
-			animated_sprite.frame_changed.connect(_on_animated_sprite_frame_changed)
-
-	if is_instance_valid(attack_hitbox):
-		attack_hitbox.monitoring = false
-		if not attack_hitbox.body_entered.is_connected(_on_attack_hitbox_body_entered):
-			attack_hitbox.body_entered.connect(_on_attack_hitbox_body_entered)
 
 	_update_animation()
 
@@ -160,8 +150,6 @@ func _process_hurt_state(delta: float) -> void:
 func _transition_to_state(new_state: State, new_target: Node2D = target) -> void:
 	if current_state == State.DEAD:
 		return
-	if current_state == State.ATTACK and new_state != State.ATTACK:
-		_disable_attack_hitbox()
 	current_state = new_state
 	target = new_target
 
@@ -184,9 +172,11 @@ func _pick_new_wander_target() -> void:
 func _start_attack() -> void:
 	_transition_to_state(State.ATTACK)
 	attack_cooldown_timer = attack_cooldown
-	hit_targets.clear()
-	_update_hitbox_transform()
 	_play_one_shot_animation("attack_" + facing_direction)
+	
+	if is_instance_valid(target) and global_position.distance_to(target.global_position) <= attack_range + 8.0:
+		if target.has_method("take_damage"):
+			target.take_damage(attack_damage)
 
 
 func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
@@ -206,7 +196,6 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 	if current_health == 0:
 		_die()
 	else:
-		_disable_attack_hitbox()
 		_transition_to_state(State.HURT)
 		_play_one_shot_animation("hurt")
 
@@ -216,7 +205,6 @@ func _die() -> void:
 	velocity = Vector2.ZERO
 	died.emit()
 	
-	_disable_attack_hitbox()
 	if is_instance_valid(body_collision):
 		body_collision.set_deferred("disabled", true)
 	if is_instance_valid(detection_area):
@@ -256,21 +244,6 @@ func _update_animation() -> void:
 			animated_sprite.play(anim_name)
 	elif animated_sprite.sprite_frames.has_animation("idle_down"):
 		animated_sprite.play("idle_down")
-		
-
-
-func _update_hitbox_transform() -> void:
-	if not is_instance_valid(attack_hitbox):
-		return
-
-	match facing_direction:
-		"down": 
-			attack_hitbox.position = Vector2(0.0, hitbox_offset)
-		"up": 
-			attack_hitbox.position = Vector2(0.0, -hitbox_offset)
-		"side": 
-			var dir_x: float = -1.0 if animated_sprite.flip_h else 1.0 
-			attack_hitbox.position = Vector2(hitbox_offset * dir_x, 0.0)
 
 
 func _spawn_damage_number(amount: int) -> void:
@@ -311,15 +284,6 @@ func _play_one_shot_animation(anim_name: String) -> void:
 		animated_sprite.play(anim_name)
 	else:
 		_on_animated_sprite_animation_finished()
-		
-
-func _on_animated_sprite_frame_changed() -> void:
-	if not is_instance_valid(attack_hitbox):
-		return
-	if current_state == State.ATTACK:
-		attack_hitbox.monitoring = (animated_sprite.frame in attack_active_frames)
-	else:
-		attack_hitbox.monitoring = false
 
 
 func _on_animated_sprite_animation_finished() -> void:
@@ -342,24 +306,3 @@ func _on_detection_area_body_exited(body: Node2D) -> void:
 	if current_state != State.DEAD and body == target:
 		spawn_position = global_position
 		_enter_idle_with_timer()
-
-func _on_attack_hitbox_body_entered(body: Node2D) -> void:
-	if current_state != State.ATTACK or body in hit_targets:
-		return
-	if body.is_in_group(target_group):
-		hit_targets.append(body)
-		if body.has_method("take_damage"):
-			var knockback_dir: Vector2 = global_position.direction_to(body.global_position)
-			body.take_damage(attack_damage, knockback_dir * 150.0)
-			
-
-func _disable_attack_hitbox() -> void:
-	if is_instance_valid(attack_hitbox):
-		attack_hitbox.set_deferred("monitoring", false)
-
-# testing 
-func _unhandled_input(event: InputEvent) -> void:
-	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F2:
-			take_damage(10)
-			print("HP tersisa: ", current_health)
