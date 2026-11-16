@@ -383,6 +383,7 @@ bg_color = Color(0.9019608, 0.22352941, 0.27450982, 1)
 
 [node name="EnemyDummy" type="CharacterBody2D" unique_id=2133058415 groups=["enemy"]]
 collision_layer = 4
+collision_mask = 3
 motion_mode = 1
 script = ExtResource("1_0rtp4")
 
