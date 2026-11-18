@@ -264,6 +264,8 @@ func _die() -> void:
 func _update_facing_direction(dir: Vector2) -> void:
 	if not is_instance_valid(animated_sprite):
 		return
+	if dir.is_zero_approx():
+		return
 		
 	if absf(dir.x) > absf(dir.y):
 		facing_direction = "side"
@@ -438,19 +440,23 @@ func _process_investigate_state(delta: float) -> void:
 			
 
 func _get_move_direction(destination: Vector2) -> Vector2:
+	var direct_direction: Vector2 = global_position.direction_to(destination)
 	if not use_navigation or not is_instance_valid(navigation_agent):
-		return global_position.direction_to(destination)
+		return direct_direction
 
 	var nav_map: RID = navigation_agent.get_navigation_map()
 	if not nav_map.is_valid() or NavigationServer2D.map_get_iteration_id(nav_map) == 0:
-		return global_position.direction_to(destination)
+		return direct_direction
 
 	navigation_agent.target_position = destination
 	if navigation_agent.is_navigation_finished():
-		return global_position.direction_to(destination)
+		return direct_direction
 
 	var next_path_pos: Vector2 = navigation_agent.get_next_path_position()
-	return global_position.direction_to(next_path_pos)
+	var nav_direction: Vector2 = global_position.direction_to(next_path_pos)
+	if nav_direction.is_zero_approx():
+		return direct_direction
+	return nav_direction
 
 
 func _has_line_of_sight(target_node: Node2D) -> bool:
