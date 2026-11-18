@@ -18,6 +18,7 @@ enum State {
 @export var move_speed: float = 80.0
 @export var acceleration: float = 700.0
 @export var friction: float = 900.0
+@export var use_navigation: bool = true
 
 @export_category("Wander Settings")
 @export var can_wander: bool = true
@@ -45,6 +46,7 @@ enum State {
 @onready var health_bar: ProgressBar = $HealthBar
 @onready var attack_hitbox: Area2D = $AttackHitbox
 @onready var line_of_sight: RayCast2D = $LineOfSight
+@onready var navigation_agent: NavigationAgent2D = $NavigationAgent2D
 
 var current_state: State = State.IDLE
 var current_health: int = max_health
@@ -149,7 +151,7 @@ func _process_wander_state(delta: float) -> void:
 	else:
 		stuck_timer = 0.0
 		
-	var direction: Vector2 = global_position.direction_to(wander_target_position)
+	var direction: Vector2 = _get_move_direction(wander_target_position)
 	_update_facing_direction(direction)
 	velocity = velocity.move_toward(direction * wander_speed, acceleration * delta)
 
@@ -165,7 +167,7 @@ func _process_chase_state(delta: float) -> void:
 
 	last_known_position = target.global_position
 	var distance_to_target: float = global_position.distance_to(target.global_position)
-	var direction: Vector2 = global_position.direction_to(target.global_position)
+	var direction: Vector2 = _get_move_direction(target.global_position)
 	_update_facing_direction(direction)
 
 	if distance_to_target <= attack_range:
@@ -261,6 +263,8 @@ func _die() -> void:
 
 func _update_facing_direction(dir: Vector2) -> void:
 	if not is_instance_valid(animated_sprite):
+		return
+	if dir.is_zero_approx():
 		return
 		
 	if absf(dir.x) > absf(dir.y):
@@ -421,7 +425,7 @@ func _process_investigate_state(delta: float) -> void:
 			reached_last_known = true
 			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		else:
-			var direction: Vector2 = global_position.direction_to(last_known_position)
+			var direction: Vector2 = _get_move_direction(last_known_position)
 			_update_facing_direction(direction)
 			velocity = velocity.move_toward(direction * move_speed, acceleration * delta)
 	else:
@@ -434,6 +438,26 @@ func _process_investigate_state(delta: float) -> void:
 			stuck_timer = 0.0
 			_transition_to_state(State.WANDER, null)
 			
+
+func _get_move_direction(destination: Vector2) -> Vector2:
+	var direct_direction: Vector2 = global_position.direction_to(destination)
+	if not use_navigation or not is_instance_valid(navigation_agent):
+		return direct_direction
+
+	var nav_map: RID = navigation_agent.get_navigation_map()
+	if not nav_map.is_valid() or NavigationServer2D.map_get_iteration_id(nav_map) == 0:
+		return direct_direction
+
+	navigation_agent.target_position = destination
+	if navigation_agent.is_navigation_finished():
+		return direct_direction
+
+	var next_path_pos: Vector2 = navigation_agent.get_next_path_position()
+	var nav_direction: Vector2 = global_position.direction_to(next_path_pos)
+	if nav_direction.is_zero_approx():
+		return direct_direction
+	return nav_direction
+
 
 func _has_line_of_sight(target_node: Node2D) -> bool:
 	if not require_line_of_sight or not is_instance_valid(line_of_sight):

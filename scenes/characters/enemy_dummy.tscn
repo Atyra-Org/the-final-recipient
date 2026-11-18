@@ -440,3 +440,8 @@ debug_color = Color(0.8649835, 0.0005943185, 0.8645114, 0.41960785)
 
 [node name="LineOfSight" type="RayCast2D" parent="." unique_id=1611367674]
 collision_mask = 3
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1084453217]
+path_desired_distance = 6.0
+target_desired_distance = 8.0
+avoidance_enabled = false
