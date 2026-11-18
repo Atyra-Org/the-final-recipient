@@ -8,6 +8,7 @@ enum State {
 	IDLE,
 	WANDER,
 	CHASE,
+	INVESTIGATE,
 	ATTACK,
 	HURT,
 	DEAD
@@ -35,6 +36,7 @@ enum State {
 
 @export_category("AI Detection")
 @export var target_group: StringName = &"player"
+@export var investigate_wait_time: float = 2.0
 
 @onready var detection_area: Area2D = $DetectionArea
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -51,6 +53,8 @@ var spawn_position: Vector2 = Vector2.ZERO
 var wander_target_position: Vector2 = Vector2.ZERO
 var state_timer: float = 0.0
 var hit_targets: Array[Node2D] = []
+var last_known_position: Vector2 = Vector2.ZERO
+var reached_last_known: bool = false
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
@@ -98,6 +102,8 @@ func _physics_process(delta: float) -> void:
 			_process_wander_state(delta)
 		State.CHASE:
 			_process_chase_state(delta)
+		State.INVESTIGATE:
+			_process_investigate_state(delta)
 		State.ATTACK:
 			_process_attack_state(delta)
 		State.HURT:
@@ -321,7 +327,6 @@ func _on_animated_sprite_frame_changed() -> void:
 	else:
 		attack_hitbox.monitoring = false
 
-
 func _on_animated_sprite_animation_finished() -> void:
 	match current_state:
 		State.ATTACK, State.HURT:
@@ -340,8 +345,8 @@ func _on_detection_area_body_entered(body: Node2D) -> void:
 
 func _on_detection_area_body_exited(body: Node2D) -> void:
 	if current_state != State.DEAD and body == target:
-		spawn_position = global_position
-		_enter_idle_with_timer()
+		last_known_position = body.global_position
+		_enter_investigate_state()
 
 func _on_attack_hitbox_body_entered(body: Node2D) -> void:
 	if current_state != State.ATTACK or body in hit_targets:
@@ -356,3 +361,27 @@ func _on_attack_hitbox_body_entered(body: Node2D) -> void:
 func _disable_attack_hitbox() -> void:
 	if is_instance_valid(attack_hitbox):
 		attack_hitbox.set_deferred("monitoring", false)
+		
+func _enter_investigate_state() -> void:
+	reached_last_known = false
+	state_timer = investigate_wait_time
+	_transition_to_state(State.INVESTIGATE, null)
+
+
+func _process_investigate_state(delta: float) -> void:
+	if not reached_last_known:
+		var distance_to_last_pos: float = global_position.distance_to(last_known_position)
+		if distance_to_last_pos <= 8.0 or is_on_wall():
+			reached_last_known = true
+			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		else:
+			var direction: Vector2 = global_position.direction_to(last_known_position)
+			_update_facing_direction(direction)
+			velocity = velocity.move_toward(direction * move_speed, acceleration * delta)
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		state_timer -= delta
+		if state_timer <= 0.0:
+			wander_target_position = spawn_position
+			state_timer = 5.0
+			_transition_to_state(State.WANDER, null)
