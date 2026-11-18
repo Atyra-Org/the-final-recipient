@@ -748,8 +748,8 @@ nodes/StateMachine/position = Vector2(50, 130)
 node_connections = [&"output", 0, &"StateMachine"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6x8li"]
-radius = 16.0
-height = 34.0
+radius = 11.0
+height = 38.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_6x8li"]
 radius = 8.0
