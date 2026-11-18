@@ -36,6 +36,7 @@ enum State {
 
 @export_category("AI Detection")
 @export var target_group: StringName = &"player"
+@export var require_line_of_sight: bool = true
 @export var investigate_wait_time: float = 2.0
 
 @onready var detection_area: Area2D = $DetectionArea
@@ -43,6 +44,7 @@ enum State {
 @onready var body_collision: CollisionShape2D = $BodyCollision
 @onready var health_bar: ProgressBar = $HealthBar
 @onready var attack_hitbox: Area2D = $AttackHitbox
+@onready var line_of_sight: RayCast2D = $LineOfSight
 
 var current_state: State = State.IDLE
 var current_health: int = max_health
@@ -55,6 +57,8 @@ var state_timer: float = 0.0
 var hit_targets: Array[Node2D] = []
 var last_known_position: Vector2 = Vector2.ZERO
 var reached_last_known: bool = false
+var candidate_target: Node2D = null
+var stuck_timer: float = 0.0
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
@@ -94,6 +98,11 @@ func _physics_process(delta: float) -> void:
 
 	if attack_cooldown_timer > 0.0:
 		attack_cooldown_timer -= delta
+		
+
+	if current_state in [State.IDLE, State.WANDER, State.INVESTIGATE]:
+		if is_instance_valid(candidate_target) and _has_line_of_sight(candidate_target):
+			_transition_to_state(State.CHASE, candidate_target)
 
 	match current_state:
 		State.IDLE:
@@ -128,9 +137,17 @@ func _process_wander_state(delta: float) -> void:
 	state_timer -= delta
 	var distance_to_point: float = global_position.distance_to(wander_target_position)
 	
-	if distance_to_point <= 6.0 or state_timer <= 0.0 or is_on_wall():
+	if distance_to_point <= 6.0 or state_timer <= 0.0:
 		_enter_idle_with_timer()
 		return
+
+	if is_on_wall():
+		stuck_timer += delta
+		if stuck_timer >= 0.25:
+			_enter_idle_with_timer()
+			return
+	else:
+		stuck_timer = 0.0
 		
 	var direction: Vector2 = global_position.direction_to(wander_target_position)
 	_update_facing_direction(direction)
@@ -141,11 +158,16 @@ func _process_chase_state(delta: float) -> void:
 	if not is_instance_valid(target):
 		_enter_idle_with_timer()
 		return
-	
+
+	if not _has_line_of_sight(target):
+		_enter_investigate_state()
+		return
+
+	last_known_position = target.global_position
 	var distance_to_target: float = global_position.distance_to(target.global_position)
 	var direction: Vector2 = global_position.direction_to(target.global_position)
 	_update_facing_direction(direction)
-	
+
 	if distance_to_target <= attack_range:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		if attack_cooldown_timer <= 0.0:
@@ -175,6 +197,7 @@ func _transition_to_state(new_state: State, new_target: Node2D = target) -> void
 func _enter_idle_with_timer() -> void:
 	state_timer = randf_range(idle_wait_min, idle_wait_max)
 	_transition_to_state(State.IDLE, null)
+	last_known_position = Vector2.ZERO
 
 
 func _pick_new_wander_target() -> void:
@@ -184,6 +207,7 @@ func _pick_new_wander_target() -> void:
 	
 	wander_target_position = spawn_position + offset
 	state_timer = 4.0
+	stuck_timer = 0.0
 	_transition_to_state(State.WANDER, null)
 
 
@@ -218,6 +242,7 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 
 
 func _die() -> void:
+	candidate_target = null
 	current_state = State.DEAD
 	velocity = Vector2.ZERO
 	died.emit()
@@ -329,9 +354,16 @@ func _on_animated_sprite_frame_changed() -> void:
 
 func _on_animated_sprite_animation_finished() -> void:
 	match current_state:
-		State.ATTACK, State.HURT:
+		State.ATTACK:
 			if is_instance_valid(target):
 				_transition_to_state(State.CHASE)
+			else:
+				_enter_idle_with_timer()
+		State.HURT:
+			if is_instance_valid(target):
+				_transition_to_state(State.CHASE)
+			elif last_known_position != Vector2.ZERO:
+				_enter_investigate_state()
 			else:
 				_enter_idle_with_timer()
 		State.DEAD:
@@ -340,13 +372,20 @@ func _on_animated_sprite_animation_finished() -> void:
 
 func _on_detection_area_body_entered(body: Node2D) -> void:
 	if current_state != State.DEAD and body.is_in_group(target_group):
-		_transition_to_state(State.CHASE, body)
+		candidate_target = body
+		if _has_line_of_sight(body):
+			_transition_to_state(State.CHASE, body)
 
 
 func _on_detection_area_body_exited(body: Node2D) -> void:
+	if body == candidate_target:
+		candidate_target = null
 	if current_state != State.DEAD and body == target:
 		last_known_position = body.global_position
-		_enter_investigate_state()
+		if current_state == State.HURT:
+			target = null
+		else:
+			_enter_investigate_state()
 
 func _on_attack_hitbox_body_entered(body: Node2D) -> void:
 	if current_state != State.ATTACK or body in hit_targets:
@@ -362,16 +401,23 @@ func _disable_attack_hitbox() -> void:
 	if is_instance_valid(attack_hitbox):
 		attack_hitbox.set_deferred("monitoring", false)
 		
+
 func _enter_investigate_state() -> void:
 	reached_last_known = false
+	stuck_timer = 0.0
 	state_timer = investigate_wait_time
 	_transition_to_state(State.INVESTIGATE, null)
 
 
 func _process_investigate_state(delta: float) -> void:
 	if not reached_last_known:
+		if is_on_wall():
+			stuck_timer += delta
+		else:
+			stuck_timer = 0.0
+
 		var distance_to_last_pos: float = global_position.distance_to(last_known_position)
-		if distance_to_last_pos <= 8.0 or is_on_wall():
+		if distance_to_last_pos <= 8.0 or stuck_timer >= 0.25:
 			reached_last_known = true
 			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		else:
@@ -382,6 +428,22 @@ func _process_investigate_state(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		state_timer -= delta
 		if state_timer <= 0.0:
+			last_known_position = Vector2.ZERO
 			wander_target_position = spawn_position
 			state_timer = 5.0
+			stuck_timer = 0.0
 			_transition_to_state(State.WANDER, null)
+			
+
+func _has_line_of_sight(target_node: Node2D) -> bool:
+	if not require_line_of_sight or not is_instance_valid(line_of_sight):
+		return true
+	if not is_instance_valid(target_node):
+		return false
+	
+	line_of_sight.target_position = line_of_sight.to_local(target_node.global_position)
+	line_of_sight.force_raycast_update()
+	
+	if not line_of_sight.is_colliding():
+		return true
+	return line_of_sight.get_collider() == target_node
