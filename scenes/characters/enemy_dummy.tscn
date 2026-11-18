@@ -384,6 +384,9 @@ bg_color = Color(0.101960786, 0.101960786, 0.101960786, 0.8)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ho4b0"]
 bg_color = Color(0.9019608, 0.22352941, 0.27450982, 1)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4byay"]
+size = Vector2(20, 18.5)
+
 [node name="EnemyDummy" type="CharacterBody2D" unique_id=2133058415 groups=["enemy"]]
 collision_layer = 4
 collision_mask = 3
@@ -392,11 +395,10 @@ script = ExtResource("1_0rtp4")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=491899430]
 sprite_frames = SubResource("SpriteFrames_ft4xp")
-animation = &"death"
-frame = 3
-frame_progress = 1.0
+animation = &"idle_down"
 
 [node name="BodyCollision" type="CollisionShape2D" parent="." unique_id=2047396179]
+position = Vector2(0, 1)
 shape = SubResource("CircleShape2D_ft4xp")
 
 [node name="DetectionArea" type="Area2D" parent="." unique_id=1550600012]
@@ -414,7 +416,9 @@ monitoring = false
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox" unique_id=2093672473]
+position = Vector2(0, 2)
 shape = SubResource("RectangleShape2D_ft4xp")
+debug_color = Color(0.98052996, 0, 0.38287038, 0.41960785)
 
 [node name="HealthBar" type="ProgressBar" parent="." unique_id=1638160377]
 offset_left = -14.0
@@ -424,3 +428,12 @@ offset_bottom = -18.0
 theme_override_styles/background = SubResource("StyleBoxFlat_ft4xp")
 theme_override_styles/fill = SubResource("StyleBoxFlat_ho4b0")
 show_percentage = false
+
+[node name="HurtBox" type="Area2D" parent="." unique_id=741608001]
+collision_layer = 64
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox" unique_id=131970325]
+position = Vector2(0, 2.75)
+shape = SubResource("RectangleShape2D_4byay")
+debug_color = Color(0.8649835, 0.0005943185, 0.8645114, 0.41960785)
