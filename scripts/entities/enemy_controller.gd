@@ -356,3 +356,10 @@ func _on_attack_hitbox_body_entered(body: Node2D) -> void:
 func _disable_attack_hitbox() -> void:
 	if is_instance_valid(attack_hitbox):
 		attack_hitbox.set_deferred("monitoring", false)
+
+# testing 
+func _unhandled_input(event: InputEvent) -> void:
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F2:
+			take_damage(10)
+			print("HP tersisa: ", current_health)

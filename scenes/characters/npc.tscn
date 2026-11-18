@@ -1,8 +1,8 @@
-[gd_scene format=3 uid="uid://b0eb7tal2kruc"]
+[gd_scene format=3 uid="uid://dm3vxk0iy07d0"]
 
-[ext_resource type="Script" path="res://scripts/entities/npc.gd" id="1_bgitj"]
-[ext_resource type="Texture2D" path="res://assets/sprites/characters/npc merchant C v02.png" id="1_ceaqc"]
-[ext_resource type="PackedScene" path="res://scenes/ui/interact.tscn" id="2_84hc2"]
+[ext_resource type="Script" uid="uid://qe7dh7hx7l03" path="res://scripts/entities/npc.gd" id="1_bgitj"]
+[ext_resource type="Texture2D" uid="uid://bm12ll16om3vy" path="res://assets/sprites/characters/npc merchant C v02.png" id="1_ceaqc"]
+[ext_resource type="PackedScene" uid="uid://bouxkjf80gwyu" path="res://scenes/ui/interact.tscn" id="2_84hc2"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_4byay"]
 radius = 15.0

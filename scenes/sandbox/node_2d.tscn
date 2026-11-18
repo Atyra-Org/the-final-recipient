@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cj44hi4dxsu00"]
+[gd_scene format=3 uid="uid://dqwndtduy536o"]
 
 [ext_resource type="PackedScene" uid="uid://br81nheuoyihg" path="res://scenes/characters/player.tscn" id="1_cx6ri"]
 [ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="2_bqvm3"]
@@ -10,7 +10,6 @@ position = Vector2(444, 169)
 
 [node name="Player" parent="." unique_id=1067953716 instance=ExtResource("1_cx6ri")]
 position = Vector2(140, 101)
-hitbox_offset = null
 
 [node name="Camera2D2" type="Camera2D" parent="Player" unique_id=1135148522]
 position = Vector2(-1, -3)
