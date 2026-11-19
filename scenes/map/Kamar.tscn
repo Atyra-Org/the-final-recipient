@@ -1,20 +1,20 @@
 [gd_scene format=3 uid="uid://dou6ilekcn0rv"]
 
 [ext_resource type="PackedScene" uid="uid://br81nheuoyihg" path="res://scenes/characters/player.tscn" id="1_vu1y6"]
+[ext_resource type="PackedScene" uid="uid://dm3vxk0iy07d0" path="res://scenes/characters/npc.tscn" id="2_grsn6"]
 [ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="3_2a2jx"]
 [ext_resource type="PackedScene" uid="uid://dj3b04ivlcb3h" path="res://resources/tiled_maps/kamar.tmx" id="4_erpfb"]
 
-[node name="map 1" type="Node2D" unique_id=1134479886]
+[node name="Node" type="Node2D" unique_id=1134479886]
 
 [node name="kamar" parent="." unique_id=568115065 instance=ExtResource("4_erpfb")]
 position = Vector2(229, 58)
 
-[node name="EnemyDummy" parent="." unique_id=2133058415 instance=ExtResource("3_2a2jx")]
-position = Vector2(277, 185)
-
 [node name="Player" parent="." unique_id=1067953716 instance=ExtResource("1_vu1y6")]
-y_sort_enabled = true
 position = Vector2(373, 270)
 
-[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=271960598]
-color = Color(0.018673243, 0.034726154, 1.504086e-09, 1)
+[node name="npc" parent="." unique_id=1287885675 instance=ExtResource("2_grsn6")]
+position = Vector2(327, 138)
+
+[node name="EnemyDummy" parent="." unique_id=2133058415 instance=ExtResource("3_2a2jx")]
+position = Vector2(89, 76)
