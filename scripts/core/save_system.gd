@@ -1,8 +1,6 @@
 class_name SaveSystem
 extends RefCounted
-## Agnostic JSON save/load (one file per slot under `user://`).
-## Static API — usable without an autoload. Emits `EventBus.game_saved` / `game_loaded`
-## when the EventBus autoload is present in the tree (silently no-ops otherwise).
+
 
 const SLOT_PATH := "user://save_slot_%d.json"
 const SCHEMA_VERSION := 1
@@ -83,8 +81,6 @@ static func delete_save(slot: int) -> bool:
 		return false
 	return true
 
-
-# --- Internals ------------------------------------------------------------
 
 static func _path(slot: int) -> String:
 	if slot < 0:

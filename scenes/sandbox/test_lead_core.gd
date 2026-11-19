@@ -1,6 +1,5 @@
 extends Node2D
-## Interactive sandbox bench: draw a stroke -> $1 recognizer -> EventBus.
-## Left click + drag draws, release recognizes. F5 save, F9 load, C clear.
+
 
 const Recognizer := preload("res://scripts/core/math/unistroke_recognizer.gd")
 const SaveSystemScript := preload("res://scripts/core/save_system.gd")
@@ -46,8 +45,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_status_label.text = "cleared"
 
 
-# --- Drawing ----------------------------------------------------------------
-
 func _begin_stroke(position: Vector2) -> void:
 	_drawing = true
 	_points.clear()
@@ -57,7 +54,7 @@ func _begin_stroke(position: Vector2) -> void:
 
 
 func _extend_stroke(position: Vector2) -> void:
-	# ponytail: accept every motion event; add distance-gating if brush strokes get dense.
+
 	if not _points.is_empty() and _points[-1].distance_to(position) < 1.0:
 		return
 	_points.append(position)
@@ -91,8 +88,6 @@ func _reset_bench() -> void:
 	_stroke.clear_points()
 	_recognition_label.text = "match: —   confidence: —"
 
-
-# --- Save / load ------------------------------------------------------------
 
 func _save_dummy_state() -> void:
 	_loop_count += 1

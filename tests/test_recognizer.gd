@@ -1,6 +1,5 @@
 extends SceneTree
-## Headless test runner: godot --headless --path . --script tests/test_recognizer.gd
-## Exit code 0 = all pass, 1 = failure.
+
 
 const Recognizer := preload("res://scripts/core/math/unistroke_recognizer.gd")
 const EventBusScript := preload("res://scripts/core/event_bus.gd")
@@ -28,13 +27,11 @@ func _check(label: String, condition: bool, detail: String = "") -> void:
 		print("  FAIL  %s%s" % [label, (" :: " + detail) if detail else ""])
 
 
-# --- Case A ------------------------------------------------------------------
-
 func _case_a_event_bus() -> void:
 	print("[Case A] EventBus signal emission/reception")
 	var bus: Node = root.get_node_or_null("EventBus")
 	if bus == null:
-		# Autoload absent (bare --script run): test a fresh instance instead.
+
 		bus = EventBusScript.new()
 		root.add_child(bus)
 
@@ -58,15 +55,13 @@ func _case_a_event_bus() -> void:
 		and bus.has_signal("letter_trigger_activated") and bus.has_signal("player_state_changed"))
 
 
-# --- Case B ------------------------------------------------------------------
-
 func _case_b_horizontal_line() -> void:
 	print("[Case B] rough horizontal line -> line_horizontal, score >= 0.75")
 	var recognizer = Recognizer.new()
 	var stroke: Array[Vector2] = []
 	for i in 25:
 		var x := float(i) * 12.0
-		# Hand-drawn jitter: +-3 px vertical noise.
+
 		var y := sin(float(i) * 1.7) * 3.0
 		stroke.append(Vector2(x, y))
 
@@ -75,7 +70,7 @@ func _case_b_horizontal_line() -> void:
 	_check("recognized == line_horizontal", result["name"] == "line_horizontal", str(result["name"]))
 	_check("score >= 0.75", result["score"] >= 0.75, "score=%.4f" % result["score"])
 
-	# Also confirm the pipeline contract: exactly 64 points on a 250-square, centred.
+
 	var normalized: Array[Vector2] = recognizer.normalize(stroke)
 	_check("resample yields 64 points", normalized.size() == Recognizer.POINT_COUNT, "n=%d" % normalized.size())
 	var box := Rect2(normalized[0], Vector2.ZERO)
@@ -86,8 +81,6 @@ func _case_b_horizontal_line() -> void:
 	_check("centroid at origin", recognizer.centroid(normalized).length() < 0.001,
 		"|centroid|=%.6f" % recognizer.centroid(normalized).length())
 
-
-# --- Case C ------------------------------------------------------------------
 
 func _case_c_invalid_stroke() -> void:
 	print("[Case C] invalid / noisy strokes -> graceful failure")
@@ -103,7 +96,7 @@ func _case_c_invalid_stroke() -> void:
 	_check("2-point stroke rejected (below MIN_POINTS)",
 		two_result["name"] == "" and two_result["score"] == 0.0, str(two_result))
 
-	# Degenerate: all points identical -> zero path length.
+
 	var duplicate: Array[Vector2] = []
 	for i in 10:
 		duplicate.append(Vector2(50.0, 50.0))
@@ -111,14 +104,12 @@ func _case_c_invalid_stroke() -> void:
 	_check("zero-length stroke rejected (no NaN)",
 		dup_result["name"] == "" and not is_nan(dup_result["score"]), str(dup_result))
 
-	# Degenerate template registration must not corrupt the template set.
+
 	recognizer.add_template("bogus", [Vector2.ZERO, Vector2.ZERO])
 	var after: Dictionary = recognizer.recognize([Vector2(0, 0), Vector2(5, 0), Vector2(9, 1), Vector2(14, 0)])
 	_check("degenerate template rejected, recognizer still functional",
 		after["name"] != "bogus" and after["score"] >= 0.0, str(after))
 
-
-# --- Case D ------------------------------------------------------------------
 
 func _case_d_direction_invariance() -> void:
 	print("[Case D] stroke direction must not change the match")
@@ -127,7 +118,7 @@ func _case_d_direction_invariance() -> void:
 	var circle := _closed_circle(60, 90.0)
 	var circle_ccw: Array[Vector2] = []
 	for p in circle:
-		circle_ccw.append(Vector2(320.0, 180.0) * 2.0 - p)  # mirror => reversed winding
+		circle_ccw.append(Vector2(320.0, 180.0) * 2.0 - p)
 	var tri := _closed_triangle(90.0)
 	var tri_ccw: Array[Vector2] = []
 	for p in tri:
@@ -149,7 +140,7 @@ func _case_d_direction_invariance() -> void:
 	_check("triangle CCW -> triangle",
 		tri_ccw_result["name"] == "triangle" and tri_ccw_result["score"] >= 0.75, str(tri_ccw_result))
 
-	# Cross-talk: a circle must never beat its own template on triangle.
+
 	_check("circle not mistaken for triangle", cw_result["name"] != "triangle" and ccw_result["name"] != "triangle")
 	_check("triangle not mistaken for circle", tri_cw_result["name"] != "circle" and tri_ccw_result["name"] != "circle")
 
