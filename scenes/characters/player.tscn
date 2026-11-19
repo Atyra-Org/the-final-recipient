@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://c8cth052nm4as" path="res://assets/sprites/characters/AlricBase.png" id="1_rp718"]
 [ext_resource type="Script" uid="uid://cqerpn8a2vqfo" path="res://scripts/entities/player.gd" id="1_yewv4"]
 [ext_resource type="PackedScene" uid="uid://b43ty744bxaec" path="res://scenes/ui/interact_component.tscn" id="3_76oj4"]
+[ext_resource type="Texture2D" uid="uid://h452h6vefyj1" path="res://assets/sprites/icon/light_point.webp" id="4_dyp2m"]
 
 [sub_resource type="Animation" id="Animation_yewv4"]
 length = 0.001
@@ -748,8 +749,8 @@ nodes/StateMachine/position = Vector2(50, 130)
 node_connections = [&"output", 0, &"StateMachine"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6x8li"]
-radius = 11.0
-height = 38.0
+radius = 1.0
+height = 8.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_6x8li"]
 radius = 8.0
@@ -792,12 +793,14 @@ position = Vector2(0, 3)
 shape = SubResource("CircleShape2D_6x8li")
 
 [node name="InteractComponent" parent="." unique_id=1267172175 instance=ExtResource("3_76oj4")]
-visible = false
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=922704132]
 zoom = Vector2(2, 2)
 position_smoothing_enabled = true
 position_smoothing_speed = 3.5
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1327142855]
+texture = ExtResource("4_dyp2m")
 
 [connection signal="animation_finished" from="AnimationTree" to="." method="_on_animation_tree_animation_finished"]
 [connection signal="area_entered" from="Hitbox" to="." method="_on_hitbox_area_entered"]
