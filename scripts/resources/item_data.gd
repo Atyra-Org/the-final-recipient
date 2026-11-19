@@ -1,26 +1,22 @@
 class_name ItemData
 extends Resource
-## Data definition for every inventoryable object (Mechanic #5).
-## Pure data: no UI, no scene, no engine dependency beyond Resource.
+
 
 enum ItemType { CONSUMABLE, KEY_ITEM, DOCUMENT, SIGIL }
 
 @export_group("Identity")
-## Unique, stable identifier - the key used by inventory, save slots, clues.
+
 @export var id: String = ""
 @export var name: String = ""
 @export var description: String = ""
 
 @export_group("Behavior")
 @export var item_type: ItemType = ItemType.KEY_ITEM
-## Whether multiple instances occupy one slot.
+
 @export var is_stackable: bool = false
 @export var max_stack_size: int = 1
 
-## Extra metadata for item types. Keys are item_type-specific:
-##   DOCUMENT -> "letter_text": String
-##   SIGIL    -> "template_name": String
-##   KEY_ITEM -> "gate_id": String
+
 @export var custom_properties: Dictionary = {}
 
 

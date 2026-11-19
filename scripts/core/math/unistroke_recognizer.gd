@@ -1,7 +1,6 @@
 class_name UnistrokeRecognizer
 extends RefCounted
-## $1 Unistroke Recognizer (Wobbrock, Wilson, Li — UIST 2007).
-## Pure geometry, no engine dependencies: resample -> rotate -> scale -> translate -> match.
+
 
 const POINT_COUNT := 64
 const SQUARE_SIZE := 250.0
@@ -32,9 +31,8 @@ func recognize(points: Array[Vector2]) -> Dictionary:
 	var candidate := normalize(points)
 	if candidate.is_empty():
 		return {"name": "", "score": 0.0}
-	# $1 compares point index to point index, so a stroke drawn in the opposite
-	# direction scores near-zero on its own template. Normalising the reversed
-	# stroke and taking the better of the two makes matching direction-invariant.
+
+
 	var reversed := normalize(_reversed(points))
 
 	var best_name := ""
@@ -48,8 +46,6 @@ func recognize(points: Array[Vector2]) -> Dictionary:
 			best_name = template["name"]
 	return {"name": best_name, "score": best_score}
 
-
-# --- Pipeline -------------------------------------------------------------
 
 func normalize(points: Array[Vector2]) -> Array[Vector2]:
 	if points.size() < MIN_POINTS or path_length(points) <= 0.0:
@@ -161,8 +157,6 @@ func _reversed(points: Array[Vector2]) -> Array[Vector2]:
 	return out
 
 
-# --- Matching -------------------------------------------------------------
-
 func _score_at_best_angle(candidate: Array[Vector2], template: Array[Vector2]) -> float:
 	var a := -ANGLE_RANGE
 	var b := ANGLE_RANGE
@@ -187,8 +181,6 @@ func _score_at_best_angle(candidate: Array[Vector2], template: Array[Vector2]) -
 
 	return clampf(1.0 - minf(f1, f2) / HALF_DIAGONAL, 0.0, 1.0)
 
-
-# --- Default templates ----------------------------------------------------
 
 func _bounding_box(points: Array[Vector2]) -> Rect2:
 	var box := Rect2(points[0], Vector2.ZERO)

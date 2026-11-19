@@ -1,6 +1,6 @@
 class_name InventorySlot
 extends Resource
-## A single inventory slot holding one ItemData with a quantity.
+
 
 const EMPTY_MARKER := "empty"
 
@@ -17,19 +17,16 @@ func is_empty() -> bool:
 	return item_data == null
 
 
-## Units this slot can hold of its current item (1 for non-stackables).
 func capacity() -> int:
 	if item_data == null:
 		return 0
 	return item_data.max_stack_size if item_data.is_stackable else 1
 
 
-## Free units left before this slot is full.
 func space() -> int:
 	return maxi(capacity() - quantity, 0) if item_data != null else 0
 
 
-## True when `other_item` can be stacked into this slot right now.
 func can_merge_with(other_item: ItemData) -> bool:
 	if other_item == null or item_data == null:
 		return false
@@ -38,7 +35,6 @@ func can_merge_with(other_item: ItemData) -> bool:
 	return space() > 0
 
 
-## Adds up to `amount`, clamped to capacity. Returns the overflow (0..amount).
 func try_add(amount: int) -> int:
 	if amount <= 0:
 		return 0

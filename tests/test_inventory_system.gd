@@ -1,6 +1,5 @@
 extends SceneTree
-## Headless test runner: godot --headless --path . --script tests/test_inventory_system.gd
-## Exit code 0 = all pass, 1 = failure.
+
 
 const ItemDataScript := preload("res://scripts/resources/item_data.gd")
 const InventoryManagerScript := preload("res://scripts/core/inventory_manager.gd")
@@ -80,8 +79,6 @@ func _has_event(expected_type: String, expected_id: String, expected_qty: int) -
 	return false
 
 
-# --- Case 0: data serialization ------------------------------------------
-
 func _case_item_data_dict() -> void:
 	print("[Case 0] ItemData to_dict/from_dict round-trip")
 	var item: ItemData = _new_item("clue_photo", "Photograph", ItemData.ItemType.DOCUMENT)
@@ -98,8 +95,6 @@ func _case_item_data_dict() -> void:
 	_check("unknown item_type defaults to KEY_ITEM", missing.item_type == ItemData.ItemType.KEY_ITEM, str(missing.item_type))
 	_check("max_stack_size floor is 1", missing.max_stack_size >= 1, str(missing.max_stack_size))
 
-
-# --- Case A: unique items into free slots --------------------------------
 
 func _case_unique_items() -> void:
 	print("[Case A] add unique items into free slots")
@@ -129,8 +124,6 @@ func _case_unique_items() -> void:
 	_check("null item rejected", not _inv.add_item(null, 1))
 
 
-# --- Case B: stacking to max_stack_size + overflow -----------------------
-
 func _case_stack_and_overflow() -> void:
 	print("[Case B] stack up to max_stack_size, overflow rejected cleanly")
 	_events.clear()
@@ -147,7 +140,7 @@ func _case_stack_and_overflow() -> void:
 	_check("quantity unchanged after overflow", _inv.get_item_count(pellets.id) == 5, str(_inv.get_item_count(pellets.id)))
 	_check("no item_added on rejected pickup", not _has_event("item_added", pellets.id, 10), str(_events))
 
-	# Spill into a second slot when a wider inventory has room.
+
 	_inv = InventoryManagerScript.new(_bus, MANAGER_CAPACITY)
 	_check("add 12 across 3 slots of 5 -> true", _inv.add_item(pellets, 12))
 	_check("count == 12", _inv.get_item_count(pellets.id) == 12, str(_inv.get_item_count(pellets.id)))
@@ -159,8 +152,6 @@ func _case_stack_and_overflow() -> void:
 	_check("slot 2 topped up to 5", _inv.get_slot(2).quantity == 5, str(_inv.get_slot(2).quantity))
 	_check("slot 3 holds spill 1", _inv.get_slot(3).quantity == 1, str(_inv.get_slot(3).quantity))
 
-
-# --- Case C: removal -----------------------------------------------------
 
 func _case_remove() -> void:
 	print("[Case C] remove partial and full quantities")
@@ -186,8 +177,6 @@ func _case_remove() -> void:
 	_check("remove_at(empty) false", not _inv.remove_at(0, 1))
 	_check("remove_at(out_of_range) false", not _inv.remove_at(MANAGER_CAPACITY, 1))
 
-
-# --- Case D: serialize / deserialize ------------------------------------
 
 func _case_serialization() -> void:
 	print("[Case D] serialize/deserialize round-trip is identical")

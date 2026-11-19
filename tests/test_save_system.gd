@@ -1,6 +1,5 @@
 extends SceneTree
-## Headless test runner: godot --headless --path . --script tests/test_save_system.gd
-## Exit code 0 = all pass, 1 = failure.
+
 
 const SaveSystemScript := preload("res://scripts/core/save_system.gd")
 const EventBusScript := preload("res://scripts/core/event_bus.gd")
@@ -43,8 +42,6 @@ func _event_bus() -> Node:
 		root.add_child(bus)
 	return bus
 
-
-# --- Cases ------------------------------------------------------------------
 
 var _mock := {
 	"current_chapter": "chapter_02_the_unsent",
@@ -107,7 +104,7 @@ func _case_load(loaded_slots: Array[int]) -> void:
 		typeof(data.get("timeline_loop_count")) == TYPE_INT
 		and data["timeline_loop_count"] == _mock["timeline_loop_count"], str(data.get("timeline_loop_count")))
 
-	# Guard: a missing slot must not fabricate data.
+
 	_check("load_game on absent slot returns empty", SaveSystemScript.load_game(TEST_SLOT + 5).is_empty())
 
 
