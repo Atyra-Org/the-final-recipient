@@ -1,7 +1,6 @@
 class_name InventoryManager
 extends RefCounted
-## Runtime inventory state: fixed number of slots, merge on pick-up, no UI.
-## RefCounted - so the EventBus is injected via _init(); there is no _ready().
+
 
 const DEFAULT_CAPACITY := 16
 
@@ -13,8 +12,6 @@ func _init(bus: Node, capacity: int = DEFAULT_CAPACITY) -> void:
 	_bus = bus
 	_reset_slots(capacity)
 
-
-# --- Public API ------------------------------------------------------------
 
 func capacity() -> int:
 	return _slots.size()
@@ -40,7 +37,6 @@ func get_slot(slot_index: int) -> InventorySlot:
 	return _slots[slot_index]
 
 
-## All-or-nothing pickup. Emits item_added + inventory_updated on success.
 func add_item(item: ItemData, quantity: int = 1) -> bool:
 	if item == null or item.id.is_empty() or quantity <= 0:
 		return false
@@ -63,7 +59,6 @@ func add_item(item: ItemData, quantity: int = 1) -> bool:
 	return true
 
 
-## All-or-nothing removal across slots. Emits item_removed + inventory_updated on success.
 func remove_item_by_id(item_id: String, quantity: int = 1) -> bool:
 	if item_id.is_empty() or quantity <= 0 or get_item_count(item_id) < quantity:
 		return false
@@ -99,9 +94,6 @@ func remove_at(slot_index: int, quantity: int = 1) -> bool:
 	return true
 
 
-# --- Persistence -----------------------------------------------------------
-
-## Non-empty slots only, in slot order.
 func serialize_inventory() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for slot in _slots:
@@ -110,7 +102,6 @@ func serialize_inventory() -> Array[Dictionary]:
 	return out
 
 
-## Replaces all slots; capacity is preserved (empty slots re-padded).
 func deserialize_inventory(data: Array) -> void:
 	var restored: Array[InventorySlot] = []
 	for entry in data:
@@ -124,15 +115,12 @@ func deserialize_inventory(data: Array) -> void:
 	_emit(&"inventory_updated")
 
 
-# --- Internals -------------------------------------------------------------
-
 func _reset_slots(capacity: int) -> void:
 	_slots.clear()
 	for _i in maxi(capacity, 1):
 		_slots.append(InventorySlot.new())
 
 
-## Units of `item` that could still be stored without dropping anything.
 func _free_space_for(item: ItemData) -> int:
 	var per_slot: int = item.max_stack_size if item.is_stackable else 1
 	var space: int = 0
