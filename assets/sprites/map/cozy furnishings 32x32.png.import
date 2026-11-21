@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwgd7ypyjgg4"
-path="res://.godot/imported/fortified keep, interior v01.png-15ed2cb970e40a783d614228cc953db7.ctex"
+uid="uid://bvt5aqqgbl3gi"
+path="res://.godot/imported/cozy furnishings 32x32.png-e056fc85f285dec70399b0e2cb47be67.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/tiled_maps/fortified keep, interior v01.png"
-dest_files=["res://.godot/imported/fortified keep, interior v01.png-15ed2cb970e40a783d614228cc953db7.ctex"]
+source_file="res://assets/sprites/map/cozy furnishings 32x32.png"
+dest_files=["res://.godot/imported/cozy furnishings 32x32.png-e056fc85f285dec70399b0e2cb47be67.ctex"]
 
 [params]
 

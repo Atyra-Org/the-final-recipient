@@ -239,6 +239,210 @@ tracks/1/keys = {
 "values": [false, false, true]
 }
 
+[sub_resource type="Animation" id="Animation_wqk1x"]
+resource_name = "death_down"
+length = 1.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.9, 1.1, 1.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [178, 179, 180, 179, 180]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, false]
+}
+
+[sub_resource type="Animation" id="Animation_dm10o"]
+resource_name = "death_left"
+length = 1.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.9, 1.1, 1.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [178, 179, 180, 179, 180]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, true]
+}
+
+[sub_resource type="Animation" id="Animation_o6auj"]
+resource_name = "death_right"
+length = 1.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.9, 1.1, 1.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [178, 179, 180, 179, 180]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, false]
+}
+
+[sub_resource type="Animation" id="Animation_inhyd"]
+resource_name = "death_up"
+length = 1.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4, 0.9, 1.1, 1.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [181, 182, 183, 182, 183]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, false]
+}
+
+[sub_resource type="Animation" id="Animation_j8g38"]
+resource_name = "hurt_down"
+length = 0.26666668
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [178]
+}
+
+[sub_resource type="Animation" id="Animation_tswxa"]
+resource_name = "hurt_left"
+length = 0.26666668
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [178]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.03333333),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="Animation" id="Animation_aqa0x"]
+resource_name = "hurt_right"
+length = 0.26666668
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [178]
+}
+
+[sub_resource type="Animation" id="Animation_yhyq5"]
+resource_name = "hurt_up"
+length = 0.26666668
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [181]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Sprite2D:flip_h")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.03333333),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
 [sub_resource type="Animation" id="Animation_76oj4"]
 resource_name = "idle_down"
 loop_mode = 1
@@ -576,6 +780,14 @@ _data = {
 &"dash_left": SubResource("Animation_kmyvj"),
 &"dash_right": SubResource("Animation_3wg1y"),
 &"dash_up": SubResource("Animation_a2luo"),
+&"death_down": SubResource("Animation_wqk1x"),
+&"death_left": SubResource("Animation_dm10o"),
+&"death_right": SubResource("Animation_o6auj"),
+&"death_up": SubResource("Animation_inhyd"),
+&"hurt_down": SubResource("Animation_j8g38"),
+&"hurt_left": SubResource("Animation_tswxa"),
+&"hurt_right": SubResource("Animation_aqa0x"),
+&"hurt_up": SubResource("Animation_yhyq5"),
 &"idle_down": SubResource("Animation_76oj4"),
 &"idle_left": SubResource("Animation_dyp2m"),
 &"idle_right": SubResource("Animation_atpat"),
@@ -772,7 +984,7 @@ tree_root = SubResource("AnimationNodeBlendTree_4byay")
 advance_expression_base_node = NodePath("..")
 anim_player = NodePath("../AnimationPlayer")
 parameters/StateMachine/AttackState/blend_position = Vector2(-0.0029498339, -0.9363636)
-parameters/StateMachine/MoveState/IdleState/blend_position = Vector2(0.011176825, -0.98773)
+parameters/StateMachine/MoveState/IdleState/blend_position = Vector2(-0.002742231, 0.95000005)
 parameters/StateMachine/MoveState/RunState/blend_position = Vector2(0.005256295, -0.98636365)
 parameters/StateMachine/MoveState/WalkState/blend_position = Vector2(0, -1)
 
@@ -783,11 +995,13 @@ input_pickable = false
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=170950682]
+visible = false
 position = Vector2(0, -4)
 shape = SubResource("CapsuleShape2D_6x8li")
 debug_color = Color(0.6204538, 0.3545412, 1, 0.41960785)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=981886510]
+visible = false
 position = Vector2(0, 3)
 shape = SubResource("CircleShape2D_6x8li")
 
@@ -797,7 +1011,8 @@ visible = false
 [node name="Camera2D" type="Camera2D" parent="." unique_id=922704132]
 zoom = Vector2(2, 2)
 position_smoothing_enabled = true
-position_smoothing_speed = 3.5
+position_smoothing_speed = 6.0
 
+[connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_player_animation_finished"]
 [connection signal="animation_finished" from="AnimationTree" to="." method="_on_animation_tree_animation_finished"]
 [connection signal="area_entered" from="Hitbox" to="." method="_on_hitbox_area_entered"]
