@@ -179,6 +179,45 @@ func _run() -> void:
 	_check("unfrozen enemy moved >20px in 8 frames", dist_pre - dist_post > 20.0, "%.2f px" % (dist_pre - dist_post))
 	_check("unfrozen animation playing", spr2.is_playing(), str(spr2.is_playing()))
 
+	print("=== Regression: test_line_of_sight.tscn conditions ===")
+	var scene_los: Node = load("res://scenes/sandbox/test_line_of_sight.tscn").instantiate()
+	root.add_child(scene_los)
+	await physics_frame
+	await physics_frame
+	var g2_los: EnemyController = scene_los.get_node("EnemyDummy") as EnemyController
+	var foe_los: Node2D = scene_los.get_node("Player")
+	_check("los scene uses base enemy data", g2_los.data.id == &"greedy_gremlin", str(g2_los.data.id))
+	_check("los scene does not enable observation freeze", not g2_los.data.freeze_when_observed)
+	g2_los.data = res2
+	g2_los.call("_apply_data")
+	g2_los.current_health = g2_los.max_health
+	_check("los controller has freeze flag after apply", g2_los.freeze_when_observed)
+	_check("los detection monitoring", (g2_los.get_node("DetectionArea") as Area2D).monitoring)
+	_check("los enemy detection radius applied", is_equal_approx((g2_los.get_node("DetectionArea/DetectionRadius").shape as CircleShape2D).radius, 220.0))
+	_check("los player initial facing before input", foe_los.get("facing_direction") == Vector2(0.0, 1.0), str(foe_los.get("facing_direction")))
+	_check("default player facing does not observe enemy to the right", not g2_los.call("_is_observed_by", foe_los))
+	var d0_los: float = g2_los.global_position.distance_to(foe_los.global_position)
+	g2_los.current_state = EnemyController.State.CHASE
+	g2_los.target = foe_los
+	for i in range(10):
+		await physics_frame
+	var d1_los: float = g2_los.global_position.distance_to(foe_los.global_position)
+	_check("enemy chases while outside observer FOV", d1_los < d0_los, "%.2f -> %.2f" % [d0_los, d1_los])
+	foe_los.set("facing_direction", Vector2(1.0, 0.0))
+	for i in range(4):
+		await physics_frame
+	_check("player facing right observes enemy", g2_los.call("_is_observed_by", foe_los))
+	_check("los enemy frozen velocity", g2_los.velocity == Vector2.ZERO, str(g2_los.velocity))
+	_check("los enemy frozen hitbox off", not (g2_los.get_node("AttackHitbox") as Area2D).monitoring)
+	_check("los enemy did not start attack while observed", g2_los.current_state != EnemyController.State.ATTACK, str(g2_los.current_state))
+	g2_los.call("_start_attack")
+	_check("los enemy cannot start attack while observed", g2_los.current_state != EnemyController.State.ATTACK, str(g2_los.current_state))
+	foe_los.set("facing_direction", Vector2(-1.0, 0.0))
+	for i in range(8):
+		await physics_frame
+	_check("los enemy resumes chase when player turns away", g2_los.velocity.length() > 0.0, str(g2_los.velocity.length()))
+	scene_los.queue_free()
+
 	print("=== Wall blocks freeze (line of sight) ===")
 	var wall: StaticBody2D = StaticBody2D.new()
 	var wall_shape: CollisionShape2D = CollisionShape2D.new()
