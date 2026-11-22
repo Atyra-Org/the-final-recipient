@@ -31,6 +31,11 @@ extends Resource
 @export var investigate_wait_time: float = 2.0
 @export var detection_radius: float = 140.0
 
+@export_group("Behavior")
+@export var is_invulnerable: bool = false
+@export var freeze_when_observed: bool = false
+@export var observer_fov_angle: float = 75.0
+
 @export_group("Visual")
 @export var sprite_frames: SpriteFrames = null
 @export var sprite_scale: Vector2 = Vector2.ONE
