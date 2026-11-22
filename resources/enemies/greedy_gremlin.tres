@@ -1,29 +1,11 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dr2r7qyimjwtm"]
 
-[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1_enemydata"]
-[ext_resource type="SpriteFrames" path="res://resources/enemies/greedy_gremlin_frames.tres" id="2_frames"]
+[ext_resource type="Script" uid="uid://2trshfm4dfr3" path="res://scripts/resources/enemy_data.gd" id="1_enemydata"]
+[ext_resource type="SpriteFrames" uid="uid://bitwp634r1mna" path="res://resources/enemies/greedy_gremlin_frames.tres" id="2_frames"]
 
 [resource]
 script = ExtResource("1_enemydata")
 id = &"greedy_gremlin"
 display_name = "Greedy Gremlin"
-max_health = 50
-move_speed = 80.0
-acceleration = 700.0
-friction = 900.0
-can_wander = true
-wander_speed = 55.0
-wander_radius = 90.0
-idle_wait_min = 1.5
-idle_wait_max = 3.5
-attack_damage = 10
-attack_range = 28.0
-attack_cooldown = 1.0
-hitbox_offset = 18.0
-attack_active_frames = Array[int]([1, 2])
-target_group = &"player"
-require_line_of_sight = true
-investigate_wait_time = 2.0
 detection_radius = 140.34
 sprite_frames = ExtResource("2_frames")
-sprite_scale = Vector2(1, 1)
