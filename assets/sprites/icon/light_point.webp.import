@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cp6vatoglbbdw"
-path="res://.godot/imported/cozy furnishings sampler.png-cf49bf08f99d69c6559cb98989ba9fbd.ctex"
+uid="uid://h452h6vefyj1"
+path="res://.godot/imported/light_point.webp-6152409dd3ed97a70cb06fa19a0a42c2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/tiled_maps/cozy furnishings sampler.png"
-dest_files=["res://.godot/imported/cozy furnishings sampler.png-cf49bf08f99d69c6559cb98989ba9fbd.ctex"]
+source_file="res://assets/sprites/icon/light_point.webp"
+dest_files=["res://.godot/imported/light_point.webp-6152409dd3ed97a70cb06fa19a0a42c2.ctex"]
 
 [params]
 

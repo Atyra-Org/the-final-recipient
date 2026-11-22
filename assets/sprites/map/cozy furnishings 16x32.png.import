@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjqwg1vupajwc"
-path="res://.godot/imported/cozy furnishings 16x48.png-328adaed6f480ff5b1b57087b59025a9.ctex"
+uid="uid://vniqyab6ue03"
+path="res://.godot/imported/cozy furnishings 16x32.png-08e67be2a49356b84ff927cc7709febc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/tiled_maps/cozy furnishings 16x48.png"
-dest_files=["res://.godot/imported/cozy furnishings 16x48.png-328adaed6f480ff5b1b57087b59025a9.ctex"]
+source_file="res://assets/sprites/map/cozy furnishings 16x32.png"
+dest_files=["res://.godot/imported/cozy furnishings 16x32.png-08e67be2a49356b84ff927cc7709febc.ctex"]
 
 [params]
 
