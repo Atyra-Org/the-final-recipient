@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://wprqvuc2e122"]
+
+[ext_resource type="PackedScene" uid="uid://cumpr011iravx" path="res://resources/tiled_maps/benteng_map1.tmx" id="1_jg38o"]
+[ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="2_r2m2n"]
+[ext_resource type="PackedScene" uid="uid://br81nheuoyihg" path="res://scenes/characters/player.tscn" id="2_vvvxe"]
+[ext_resource type="Texture2D" uid="uid://h452h6vefyj1" path="res://assets/sprites/icon/light_point.webp" id="3_6koem"]
+[ext_resource type="PackedScene" uid="uid://bru0uhiej6rld" path="res://scenes/ui/health_bar.tscn" id="5_4tbep"]
+[ext_resource type="Script" uid="uid://bnopcllia40g1" path="res://scripts/ui/hud.gd" id="5_dmqey"]
+
+[node name="benteng_map1" unique_id=893852014 instance=ExtResource("1_jg38o")]
+
+[node name="EnemyDummy" parent="." index="1" unique_id=2133058415 instance=ExtResource("2_r2m2n")]
+position = Vector2(103, -150)
+
+[node name="Player" parent="." index="2" unique_id=1067953716 instance=ExtResource("2_vvvxe")]
+y_sort_enabled = true
+position = Vector2(19, 152)
+
+[node name="PointLight2D" type="PointLight2D" parent="Player" index="7" unique_id=7543692]
+texture = ExtResource("3_6koem")
+texture_scale = 1.5
+
+[node name="object" parent="." index="3" unique_id=92797725]
+y_sort_enabled = true
+
+[node name="CanvasModulate" type="CanvasModulate" parent="." index="4" unique_id=179489194]
+color = Color(0, 0, 0, 1)
+
+[node name="HUD" type="CanvasLayer" parent="." index="5" unique_id=1772487725]
+script = ExtResource("5_dmqey")
+
+[node name="HealthBar" parent="HUD" index="0" unique_id=1374439408 instance=ExtResource("5_4tbep")]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 102.0
+offset_bottom = 30.0
