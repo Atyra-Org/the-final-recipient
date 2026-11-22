@@ -42,6 +42,11 @@ enum State {
 @export var require_line_of_sight: bool = true
 @export var investigate_wait_time: float = 2.0
 
+@export_category("Behavior Settings")
+@export var is_invulnerable: bool = false
+@export var freeze_when_observed: bool = false
+@export var observer_fov_angle: float = 75.0
+
 @onready var detection_area: Area2D = $DetectionArea
 @onready var detection_radius: CollisionShape2D = $DetectionArea/DetectionRadius
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -118,6 +123,9 @@ func _apply_data() -> void:
 	target_group = data.target_group
 	require_line_of_sight = data.require_line_of_sight
 	investigate_wait_time = data.investigate_wait_time
+	is_invulnerable = data.is_invulnerable
+	freeze_when_observed = data.freeze_when_observed
+	observer_fov_angle = data.observer_fov_angle
 	_apply_visual_data()
 	_apply_detection_data()
 
@@ -140,12 +148,76 @@ func _apply_detection_data() -> void:
 		detection_radius.shape = circle
 
 
+func _update_observed_state() -> bool:
+	if not freeze_when_observed or not is_instance_valid(target):
+		_resume_after_observation()
+		return false
+	if not _is_observed_by(target):
+		_resume_after_observation()
+		return false
+	_freeze_from_observation()
+	return true
+
+
+func _is_observed_by(observer: Node2D) -> bool:
+	if not _is_inside_detection_range(observer):
+		return false
+	if not _is_inside_observer_fov(observer):
+		return false
+	return _has_line_of_sight(observer)
+
+
+func _is_inside_detection_range(observer: Node2D) -> bool:
+	if not is_instance_valid(detection_area) or not detection_area.monitoring:
+		return false
+	for body: Node2D in detection_area.get_overlapping_bodies():
+		if body == observer:
+			return true
+	return false
+
+
+func _is_inside_observer_fov(observer: Node2D) -> bool:
+	var observed_facing: Variant = observer.get("facing_direction")
+	if typeof(observed_facing) != TYPE_VECTOR2:
+		return true
+	var facing: Vector2 = observed_facing
+	if facing.is_zero_approx():
+		return true
+	var world_facing: Vector2 = Vector2(facing.x, -facing.y).normalized()
+	var to_enemy: Vector2 = observer.global_position.direction_to(global_position)
+	var half_angle_cos: float = cos(deg_to_rad(clampf(observer_fov_angle, 0.0, 180.0) * 0.5))
+	return world_facing.dot(to_enemy) >= half_angle_cos
+
+
+func _freeze_from_observation() -> void:
+	velocity = Vector2.ZERO
+	_disable_attack_hitbox()
+	if current_state == State.ATTACK:
+		_transition_to_state(State.CHASE)
+	if not is_instance_valid(animated_sprite):
+		return
+	if not animated_sprite.is_playing():
+		animated_sprite.play()
+	animated_sprite.pause()
+
+
+func _resume_after_observation() -> void:
+	if not is_instance_valid(animated_sprite):
+		return
+	if not animated_sprite.is_playing() and animated_sprite.sprite_frames != null:
+		animated_sprite.play()
+
+
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEAD:
 		return
 
 	if attack_cooldown_timer > 0.0:
 		attack_cooldown_timer -= delta
+
+	if _update_observed_state():
+		move_and_slide()
+		return
 
 
 	if current_state in [State.IDLE, State.WANDER, State.INVESTIGATE]:
@@ -260,6 +332,8 @@ func _pick_new_wander_target() -> void:
 
 
 func _start_attack() -> void:
+	if _update_observed_state():
+		return
 	_transition_to_state(State.ATTACK)
 	attack_cooldown_timer = attack_cooldown
 	hit_targets.clear()
@@ -269,6 +343,9 @@ func _start_attack() -> void:
 
 func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 	if current_state == State.DEAD or amount <= 0:
+		return
+	if is_invulnerable:
+		_spawn_damage_number(0)
 		return
 
 	current_health = maxi(current_health - amount, 0)

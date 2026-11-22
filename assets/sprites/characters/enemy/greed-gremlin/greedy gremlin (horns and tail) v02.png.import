@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ccp5gsut6t22e"
-path="res://.godot/imported/greedy gremlin (base) v01.png-26748d5116c236fca6ab3308495e6398.ctex"
+uid="uid://daadbk4h8kb0l"
+path="res://.godot/imported/greedy gremlin (horns and tail) v02.png-2fc3d7f1a1a2b74c37cdcccbce24861a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/characters/greedy gremlin (base) v01.png"
-dest_files=["res://.godot/imported/greedy gremlin (base) v01.png-26748d5116c236fca6ab3308495e6398.ctex"]
+source_file="res://assets/sprites/characters/enemy/greed-gremlin/greedy gremlin (horns and tail) v02.png"
+dest_files=["res://.godot/imported/greedy gremlin (horns and tail) v02.png-2fc3d7f1a1a2b74c37cdcccbce24861a.ctex"]
 
 [params]
 
