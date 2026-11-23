@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/boss_data.gd" id="1_bossdata"]
+
+[resource]
+script = ExtResource("1_bossdata")
+id = &"the_fractured_seal"
+boss_name = "The Fractured Seal"
+max_health = 300
+arena_radius = 220.0
+chain_count = 4
+chain_rotation_speed = 0.65
+chain_damage = 15
+chain_knockback = 180.0
+chain_hit_cooldown = 0.6
+chain_width = 8.0
+target_group = &"player"

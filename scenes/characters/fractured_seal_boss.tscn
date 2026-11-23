@@ -1,0 +1,81 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/fractured_seal_boss.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://resources/bosses/the_fractured_seal.tres" id="2_data"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_arena"]
+radius = 220.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 26.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(52, 52)
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_core"]
+size = Vector2(56, 56)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
+bg_color = Color(0.0823529, 0.0313726, 0.0862745, 0.901961)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.152941, 0.0431373, 0.176471, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fill"]
+bg_color = Color(0.701961, 0.054902, 0.113725, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="FracturedSealBoss" type="StaticBody2D" groups=["boss", "enemy"]]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_boss")
+data = ExtResource("2_data")
+
+[node name="Core" type="Node2D" parent="."]
+
+[node name="CoreSeal" type="Polygon2D" parent="Core"]
+color = Color(0.298039, 0.0745098, 0.360784, 1)
+polygon = PackedVector2Array(-26, 0, -13, -22, 13, -22, 26, 0, 13, 22, -13, 22)
+
+[node name="CoreInner" type="Polygon2D" parent="Core"]
+color = Color(0.760784, 0.101961, 0.180392, 0.85)
+polygon = PackedVector2Array(-13, 0, 0, -11, 13, 0, 0, 11)
+
+[node name="CoreSprite" type="Sprite2D" parent="Core"]
+visible = false
+texture = SubResource("PlaceholderTexture2D_core")
+
+[node name="ArenaBands" type="Line2D" parent="Core"]
+width = 2.0
+default_color = Color(0.760784, 0.101961, 0.180392, 0.34902)
+points = PackedVector2Array(-34, 0, 34, 0)
+
+[node name="Chains" type="Node2D" parent="."]
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 64
+collision_mask = 8
+monitorable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("RectangleShape2D_hurt")
+
+[node name="BodyCollision" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="ArenaArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="ArenaShape" type="CollisionShape2D" parent="ArenaArea"]
+shape = SubResource("CircleShape2D_arena")
