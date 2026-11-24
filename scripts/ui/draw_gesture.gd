@@ -11,13 +11,10 @@ var _is_drawing: bool = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("draw"):
-		print("Tombol Q ditekan")
 		_start_drawing()
 	elif event.is_action_released("draw") and _is_drawing:
-		print("Tombol Q dilepaskan")
 		_finish_drawing()
 	elif event is InputEventMouseMotion and _is_drawing:
-		print("Mouse bergerak")
 		_add_point(event.position)
 
 func _start_drawing() -> void:
