@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BossData" format=3 uid="uid://dpnjjns7j68w6"]
+
+[ext_resource type="Script" uid="uid://cva1jlvg5gd4q" path="res://scripts/resources/boss_data.gd" id="1_bossdata"]
+[ext_resource type="Texture2D" uid="uid://bbctbampisuqa" path="res://assets/sprites/effects/Retro Impact Effect Pack 3 A.png" id="2_explosion"]
+[ext_resource type="Resource" uid="uid://dr2r7qyimjwtm" path="res://resources/enemies/greedy_gremlin.tres" id="2_s17wu"]
+[ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="3_rget4"]
+
+[resource]
+script = ExtResource("1_bossdata")
+explosion_texture = ExtResource("2_explosion")
