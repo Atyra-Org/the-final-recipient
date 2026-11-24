@@ -40,6 +40,9 @@ func _ready() -> void:
 
 	state_machine = animation_tree.get("parameters/StateMachine/playback")
 	move_state_machine = animation_tree.get("parameters/StateMachine/MoveState/playback")
+	
+	EventBus.gesture_recognized.connect(_on_gesture_recognized)
+	EventBus.gesture_failed.connect(_on_gesture_failed)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -265,3 +268,33 @@ func _on_animation_player_animation_finished(anim_name: StringName) -> void:
 		
 		state_machine.travel("MoveState")
 		move_state_machine.travel("IdleState")
+		
+func _on_gesture_recognized(gesture_name: String, score: float) -> void:
+	if is_dead or is_hurt:
+		return
+	#print("Gesture terdeteksi: % (akurasi: %.2f)" % [gesture_name, score])
+	
+	match gesture_name:
+		"line_horizontal":
+			_cast_slash_wave()
+		"circle":
+			_cast_heal_or_shield()
+		"triangle":
+			_cast_piercing_burst()
+		
+func _on_gesture_failed() -> void:
+	print("Pola sihir gagal dikenali")
+
+func _cast_slash_wave() -> void:
+	_start_attack()
+	
+func _cast_heal_or_shield() -> void:
+	health = clampi(health + 20, 0, max_health)
+	health_changed.emit(health, max_health)
+	
+func _cast_piercing_burst() -> void:
+	if not is_dashing:
+		is_dashing = true
+		dash_timer = DASH_DURATION
+		dash_direction = Vector2(facing_direction.x, -facing_direction.y).normalized()
+		_play_dash_animation()

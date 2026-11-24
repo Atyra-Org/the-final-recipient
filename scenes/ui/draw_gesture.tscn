@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://c3hr3ra747o07"]
+
+[ext_resource type="Script" uid="uid://bmlgp7cj83lsd" path="res://scripts/ui/draw_gesture.gd" id="1_kcbdq"]
+
+[node name="DrawGesture" type="CanvasLayer" unique_id=527038483]
+script = ExtResource("1_kcbdq")
+
+[node name="TrailLine" type="Line2D" parent="." unique_id=2108651045]
+width = 4.0
+default_color = Color(0, 0, 0, 1)
