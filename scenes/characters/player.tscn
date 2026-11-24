@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://c8cth052nm4as" path="res://assets/sprites/characters/AlricBase.png" id="1_rp718"]
 [ext_resource type="Script" uid="uid://cqerpn8a2vqfo" path="res://scripts/entities/player.gd" id="1_yewv4"]
+[ext_resource type="PackedScene" uid="uid://c3hr3ra747o07" path="res://scenes/ui/draw_gesture.tscn" id="2_dyp2m"]
 [ext_resource type="PackedScene" uid="uid://b43ty744bxaec" path="res://scenes/ui/interact_component.tscn" id="3_76oj4"]
 
 [sub_resource type="Animation" id="Animation_yewv4"]
@@ -1012,6 +1013,8 @@ visible = false
 zoom = Vector2(2, 2)
 position_smoothing_enabled = true
 position_smoothing_speed = 6.0
+
+[node name="DrawGesture" parent="." unique_id=527038483 instance=ExtResource("2_dyp2m")]
 
 [connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_player_animation_finished"]
 [connection signal="animation_finished" from="AnimationTree" to="." method="_on_animation_tree_animation_finished"]

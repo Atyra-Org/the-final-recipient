@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://h452h6vefyj1" path="res://assets/sprites/icon/light_point.webp" id="3_6koem"]
 [ext_resource type="PackedScene" uid="uid://bru0uhiej6rld" path="res://scenes/ui/health_bar.tscn" id="5_4tbep"]
 [ext_resource type="Script" uid="uid://bnopcllia40g1" path="res://scripts/ui/hud.gd" id="5_dmqey"]
+[ext_resource type="PackedScene" uid="uid://cnuifbxq47iy5" path="res://scenes/ui/mana_bar.tscn" id="7_n6owe"]
 
 [node name="benteng_map1" unique_id=893852014 instance=ExtResource("1_jg38o")]
 
@@ -34,3 +35,9 @@ offset_left = 20.0
 offset_top = 20.0
 offset_right = 102.0
 offset_bottom = 30.0
+
+[node name="ManaBar" parent="HUD" index="1" unique_id=1970201743 instance=ExtResource("7_n6owe")]
+offset_left = 20.0
+offset_top = 37.0
+offset_right = 128.0
+offset_bottom = 49.0
