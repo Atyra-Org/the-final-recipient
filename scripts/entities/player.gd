@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
-const WALK_SPEED = 65.0
-const RUN_SPEED = 170.0
+const WALK_SPEED = 85.0
+# const RUN_SPEED = 170.0
 const DASH_DURATION = 0.2
 const DASH_SPEED = 360.0
 const DASH_COOLDOWN = 1.5
@@ -10,7 +10,7 @@ const KNOCKBACK_TIMER = 1000.0
 
 var input_vector := Vector2.ZERO
 var facing_direction := Vector2.DOWN
-var is_running: bool = false
+# var is_running: bool = false
 var is_attacking: bool = false
 var is_dashing: bool = false
 var dash_timer: float = 0.0
@@ -62,7 +62,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	input_vector = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	is_running = Input.is_action_pressed("run")
+	# is_running = Input.is_action_pressed("run")
 	
 	if Input.is_action_just_pressed("dash"):
 		_start_dash()
@@ -83,20 +83,20 @@ func _physics_process(delta: float) -> void:
 		facing_direction = Vector2(input_vector.x, -input_vector.y).normalized()
 		
 		animation_tree.set("parameters/StateMachine/MoveState/WalkState/blend_position", facing_direction)
-		animation_tree.set("parameters/StateMachine/MoveState/RunState/blend_position", facing_direction)
+		# animation_tree.set("parameters/StateMachine/MoveState/RunState/blend_position", facing_direction)
 		animation_tree.set("parameters/StateMachine/MoveState/IdleState/blend_position", facing_direction)
 
-		if is_running:
-			move_state_machine.travel("RunState")
-		else:
-			move_state_machine.travel("WalkState")
+		# if is_running:
+			# move_state_machine.travel("RunState")
+		# else:
+		move_state_machine.travel("WalkState")
 	else:
 		move_state_machine.travel("IdleState")
 
-	if is_running:
-		velocity = input_vector * RUN_SPEED
-	else:
-		velocity = input_vector * WALK_SPEED
+	# if is_running:
+		# velocity = input_vector * RUN_SPEED
+	# else:
+	velocity = input_vector * WALK_SPEED
 
 	move_and_slide()
 
