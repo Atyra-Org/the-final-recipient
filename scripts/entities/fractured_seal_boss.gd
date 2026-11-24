@@ -5,43 +5,91 @@ signal died
 signal arena_state_changed(active: bool)
 
 const BOSS_BAR_SCENE: PackedScene = preload("res://scenes/ui/boss_health_bar.tscn")
-const WORLD_MASK: int = 1
+const TELEGRAPH_COLOR: Color = Color(0.95, 0.25, 0.05, 0.95)
+const TELEGRAPH_FILL: Color = Color(0.85, 0.08, 0.04, 0.28)
+
+class Telegraph extends Node2D:
+	var radius: float = 56.0
+	var progress: float = 0.0
+	var locked: bool = false
+	var pulse: float = 0.0
+
+	func _process(delta: float) -> void:
+		pulse += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var flash: float = 0.15 if locked and fmod(pulse * 10.0, 2.0) < 1.0 else 0.0
+		draw_circle(Vector2.ZERO, radius, Color(TELEGRAPH_FILL.r + flash, TELEGRAPH_FILL.g, TELEGRAPH_FILL.b, TELEGRAPH_FILL.a))
+		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, TELEGRAPH_COLOR, 4.0, false)
+		draw_arc(Vector2.ZERO, radius * 0.82, 0.0, TAU, 48, Color(1.0, 0.5, 0.08, 0.75), 2.0, false)
+		draw_arc(Vector2.ZERO, radius * progress, 0.0, TAU, 32, Color(1.0, 0.75, 0.12, 0.95), 4.0, false)
+		for i: int in 8:
+			var angle: float = TAU * float(i) / 8.0
+			draw_line(Vector2.from_angle(angle) * radius * 0.9, Vector2.from_angle(angle) * radius, Color(1.0, 0.4, 0.08, 0.75), 2.0)
+
+class Explosion extends Node2D:
+	var radius: float = 56.0
+	var age: float = 0.0
+	var duration: float = 0.35
+
+	func _process(delta: float) -> void:
+		age += delta
+		queue_redraw()
+		if age >= duration:
+			queue_free()
+
+	func _draw() -> void:
+		var ratio: float = clampf(age / duration, 0.0, 1.0)
+		var alpha: float = 1.0 - ratio
+		draw_circle(Vector2.ZERO, radius * (0.45 + ratio * 0.55), Color(1.0, 0.16, 0.03, alpha * 0.42))
+		draw_arc(Vector2.ZERO, radius * (0.65 + ratio * 0.35), 0.0, TAU, 40, Color(1.0, 0.62, 0.08, alpha), 6.0, false)
+		for i: int in 8:
+			var direction: Vector2 = Vector2.from_angle(TAU * float(i) / 8.0)
+			draw_line(direction * radius * 0.3, direction * radius * (0.7 + ratio * 0.5), Color(1.0, 0.2, 0.04, alpha), 3.0)
 
 @export var data: BossData = null
 
-@export_category("Arena")
+@export_category("Arena And AoE Telegraph")
 @export var arena_radius: float = 220.0
-@export var chain_count: int = 4
-@export var chain_rotation_speed: float = 0.65
-@export var chain_damage: int = 15
-@export var chain_knockback: float = 180.0
-@export var chain_hit_cooldown: float = 0.6
-@export var chain_width: float = 8.0
+@export var aoe_radius: float = 56.0
+@export var aoe_charge_duration: float = 1.6
+@export var aoe_lock_ratio: float = 0.8
+@export var aoe_cooldown: float = 1.4
+@export var aoe_damage: int = 20
+@export var aoe_knockback: float = 200.0
 @export var target_group: StringName = &"player"
+
+@export_category("Phase Two")
+@export var phase2_health_threshold: int = 30
+@export var phase2_tint: Color = Color(1.0, 0.3, 0.45, 1.0)
+@export var phase2_minion_scene: PackedScene = preload("res://scenes/characters/enemy_dummy.tscn")
+@export var phase2_minion_data: Resource = preload("res://resources/enemies/greedy_gremlin.tres")
+@export var phase2_minion_count: int = 2
+@export var phase2_aoe_cooldown_multiplier: float = 0.75
 
 @export_category("Stats")
 @export var max_health: int = 300
 
-@onready var hurtbox: Area2D = $Hurtbox
 @onready var arena_area: Area2D = $ArenaArea
 @onready var arena_shape: CollisionShape2D = $ArenaArea/ArenaShape
 @onready var core: Node2D = $Core
 @onready var core_sprite: Sprite2D = $Core/CoreSprite
 @onready var core_seal: Polygon2D = $Core/CoreSeal
-@onready var chains: Node2D = $Chains
+@onready var telegraphs: Node2D = $Telegraphs
 
 var current_health: int = 300
 var is_dead: bool = false
+var phase2_active: bool = false
 var spawn_position: Vector2 = Vector2.ZERO
 var arena_active: bool = false
 var health_bar: BossHealthBar = null
 
-var _chain_roots: Array[Node2D] = []
-var _chain_lines: Array[Line2D] = []
-var _chain_areas: Array[Area2D] = []
-var _chain_rects: Array[RectangleShape2D] = []
-var _chain_reaches: Array[float] = []
-var _hit_cooldowns: Dictionary = {}
+var active_telegraph: Node2D = null
+var telegraph_progress: float = 0.0
+var aoe_cooldown_timer: float = 0.0
+var locked_position: Vector2 = Vector2.ZERO
+var phase2_minions: Array[Node2D] = []
 var _bob_time: float = 0.0
 var _base_core_scale: Vector2 = Vector2.ONE
 var _squash_tween: Tween = null
@@ -55,7 +103,6 @@ func _ready() -> void:
 	current_health = max_health
 	_base_core_scale = core.scale
 	_apply_arena_radius()
-	_build_chains()
 	_set_arena_active(false)
 	var event_bus: Node = _get_event_bus()
 	if event_bus != null:
@@ -67,13 +114,19 @@ func _apply_data() -> void:
 		return
 	max_health = data.max_health
 	arena_radius = data.arena_radius
-	chain_count = maxi(data.chain_count, 1)
-	chain_rotation_speed = data.chain_rotation_speed
-	chain_damage = data.chain_damage
-	chain_knockback = data.chain_knockback
-	chain_hit_cooldown = data.chain_hit_cooldown
-	chain_width = data.chain_width
+	aoe_radius = data.aoe_radius
+	aoe_charge_duration = data.aoe_charge_duration
+	aoe_lock_ratio = data.aoe_lock_ratio
+	aoe_cooldown = data.aoe_cooldown
+	aoe_damage = data.aoe_damage
+	aoe_knockback = data.aoe_knockback
 	target_group = data.target_group
+	phase2_health_threshold = data.phase2_health_threshold
+	phase2_tint = data.phase2_tint
+	phase2_minion_scene = data.phase2_minion_scene
+	phase2_minion_data = data.phase2_minion_data
+	phase2_minion_count = data.phase2_minion_count
+	phase2_aoe_cooldown_multiplier = data.phase2_aoe_cooldown_multiplier
 	_apply_visual_data()
 
 
@@ -95,61 +148,20 @@ func _apply_arena_radius() -> void:
 		arena_shape.shape = circle
 
 
-func _build_chains() -> void:
-	for i: int in chain_count:
-		var chain_root: Node2D = Node2D.new()
-		chain_root.name = "Chain%d" % i
-		chain_root.rotation = (TAU / float(chain_count)) * float(i)
-
-		var line: Line2D = Line2D.new()
-		line.name = "Line"
-		line.width = chain_width
-		line.default_color = Color(0.36, 0.09, 0.42, 0.9)
-		line.joint_mode = Line2D.LINE_JOINT_ROUND
-		line.begin_cap_mode = Line2D.LINE_CAP_ROUND
-		line.end_cap_mode = Line2D.LINE_CAP_ROUND
-		if data != null and data.chain_texture != null:
-			line.texture = data.chain_texture
-			line.texture_mode = Line2D.LINE_TEXTURE_TILE
-
-		var hitbox: Area2D = Area2D.new()
-		hitbox.name = "Hitbox"
-		hitbox.collision_layer = 16
-		hitbox.collision_mask = 2
-		hitbox.monitorable = false
-
-		var shape_node: CollisionShape2D = CollisionShape2D.new()
-		shape_node.name = "CollisionShape2D"
-		var rect: RectangleShape2D = RectangleShape2D.new()
-		rect.size = Vector2(arena_radius, chain_width)
-		shape_node.shape = rect
-
-		hitbox.add_child(shape_node)
-		chain_root.add_child(line)
-		chain_root.add_child(hitbox)
-		chains.add_child(chain_root)
-
-		_chain_roots.append(chain_root)
-		_chain_lines.append(line)
-		_chain_areas.append(hitbox)
-		_chain_rects.append(rect)
-		_chain_reaches.append(arena_radius)
-
-
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
-	_tick_cooldowns(delta)
 	var inside: bool = _is_target_inside_arena()
 	if inside != arena_active:
 		_set_arena_active(inside)
 	if not arena_active:
 		return
-	for i: int in _chain_roots.size():
-		var chain_root: Node2D = _chain_roots[i]
-		chain_root.rotation = wrapf(chain_root.rotation + chain_rotation_speed * delta, 0.0, TAU)
-		_refresh_chain_reach(i)
-		_apply_chain_damage(i)
+	if aoe_cooldown_timer > 0.0:
+		aoe_cooldown_timer = maxf(aoe_cooldown_timer - delta, 0.0)
+	if active_telegraph == null and aoe_cooldown_timer <= 0.0:
+		_start_telegraph()
+	if active_telegraph != null:
+		_process_telegraph(delta)
 
 
 func _process(delta: float) -> void:
@@ -157,24 +169,25 @@ func _process(delta: float) -> void:
 	core.position.y = sin(_bob_time * 1.6) * 3.0
 
 
-func _is_target_inside_arena() -> bool:
+func _get_target() -> Node2D:
 	for body: Node2D in arena_area.get_overlapping_bodies():
 		if body.is_in_group(target_group):
-			return true
-	return false
+			return body
+	return null
+
+
+func _is_target_inside_arena() -> bool:
+	return _get_target() != null
 
 
 func _set_arena_active(active: bool) -> void:
 	arena_active = active
-	chains.visible = active
-	for area: Area2D in _chain_areas:
-		area.monitoring = active
-	if active and is_instance_valid(health_bar):
-		health_bar.visible = true
-	elif is_instance_valid(health_bar):
-		health_bar.visible = false
 	if active:
 		_ensure_health_bar()
+	if is_instance_valid(health_bar):
+		health_bar.visible = active
+	if not active:
+		_clear_telegraph()
 	arena_state_changed.emit(active)
 
 
@@ -190,48 +203,71 @@ func _ensure_health_bar() -> void:
 	health_bar.set_health(current_health, max_health)
 
 
-func _refresh_chain_reach(i: int) -> void:
-	var chain_root: Node2D = _chain_roots[i]
-	var direction: Vector2 = Vector2.RIGHT.rotated(chain_root.global_rotation)
-	var reach: float = arena_radius
-	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, global_position + direction * arena_radius, WORLD_MASK)
-	var hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty():
-		reach = global_position.distance_to(hit["position"]) - chain_width * 0.5
-	reach = clampf(reach, chain_width, arena_radius)
-	_chain_reaches[i] = reach
-	var line: Line2D = _chain_lines[i]
-	var points: PackedVector2Array = PackedVector2Array([Vector2.ZERO, Vector2(reach, 0.0)])
-	line.points = points
-	var rect: RectangleShape2D = _chain_rects[i]
-	rect.size = Vector2(reach, chain_width)
-	var shape_node: CollisionShape2D = _chain_areas[i].get_child(0) as CollisionShape2D
-	shape_node.position = Vector2(reach * 0.5, 0.0)
+func _start_telegraph() -> void:
+	active_telegraph = Telegraph.new()
+	active_telegraph.radius = aoe_radius
+	active_telegraph.position = global_position
+	telegraphs.add_child(active_telegraph)
+	telegraph_progress = 0.0
+	locked_position = global_position
 
 
-func _apply_chain_damage(i: int) -> void:
-	var knockback_direction: Vector2 = Vector2.RIGHT.rotated(_chain_roots[i].global_rotation)
-	for body: Node2D in _chain_areas[i].get_overlapping_bodies():
-		if not body.is_in_group(target_group):
-			continue
-		var key: int = body.get_instance_id()
-		if _hit_cooldowns.has(key) and float(_hit_cooldowns[key]) > 0.0:
-			continue
-		_hit_cooldowns[key] = chain_hit_cooldown
-		var away: Vector2 = global_position.direction_to(body.global_position)
-		if away.is_zero_approx():
-			away = knockback_direction
-		if body.has_method(&"take_damage"):
-			body.take_damage(chain_damage, away * chain_knockback)
+func _process_telegraph(delta: float) -> void:
+	if active_telegraph == null:
+		return
+	telegraph_progress += delta / aoe_charge_duration
+	active_telegraph.set("progress", clampf(telegraph_progress, 0.0, 1.0))
+	if telegraph_progress < aoe_lock_ratio:
+		var target: Node2D = _get_target()
+		if is_instance_valid(target):
+			locked_position = _clamp_to_arena(target.global_position)
+			active_telegraph.global_position = locked_position
+	else:
+		active_telegraph.set("locked", true)
+	if telegraph_progress >= 1.0:
+		_detonate(locked_position)
 
 
-func _tick_cooldowns(delta: float) -> void:
-	for key: int in _hit_cooldowns.keys():
-		var remaining: float = float(_hit_cooldowns[key]) - delta
-		if remaining <= 0.0:
-			_hit_cooldowns.erase(key)
-		else:
-			_hit_cooldowns[key] = remaining
+func _clamp_to_arena(world_position: Vector2) -> Vector2:
+	var offset: Vector2 = world_position - global_position
+	var maximum: float = maxf(arena_radius - aoe_radius, 0.0)
+	if offset.length() > maximum:
+		offset = offset.normalized() * maximum
+	return global_position + offset
+
+
+func _detonate(position: Vector2) -> void:
+	_clear_telegraph()
+	aoe_cooldown_timer = aoe_cooldown * (phase2_aoe_cooldown_multiplier if phase2_active else 1.0)
+	var explosion: Explosion = Explosion.new()
+	explosion.radius = aoe_radius
+	explosion.global_position = position
+	telegraphs.add_child(explosion)
+	if data != null and data.explosion_texture != null:
+		var sprite: Sprite2D = Sprite2D.new()
+		sprite.texture = data.explosion_texture
+		sprite.hframes = data.explosion_hframes
+		sprite.vframes = data.explosion_vframes
+		sprite.frame = data.explosion_row * data.explosion_hframes
+		sprite.scale = Vector2.ONE * aoe_radius / 32.0
+		sprite.modulate.a = 0.9
+		explosion.add_child(sprite)
+		var sprite_tween: Tween = sprite.create_tween()
+		sprite_tween.tween_property(sprite, "modulate:a", 0.0, explosion.duration)
+	var target: Node2D = _get_target()
+	if is_instance_valid(target) and target.global_position.distance_to(position) <= aoe_radius and target.global_position.distance_to(global_position) <= arena_radius:
+		var direction: Vector2 = position.direction_to(target.global_position)
+		if direction.is_zero_approx():
+			direction = Vector2.RIGHT
+		if target.has_method(&"take_damage"):
+			target.take_damage(aoe_damage, direction * aoe_knockback)
+
+
+func _clear_telegraph() -> void:
+	if is_instance_valid(active_telegraph):
+		active_telegraph.queue_free()
+	active_telegraph = null
+	telegraph_progress = 0.0
 
 
 func take_damage(amount: int, _knockback_force: Vector2 = Vector2.ZERO) -> void:
@@ -245,6 +281,8 @@ func take_damage(amount: int, _knockback_force: Vector2 = Vector2.ZERO) -> void:
 	var event_bus: Node = _get_event_bus()
 	if event_bus != null:
 		event_bus.emit_signal(&"enemy_health_changed", self, _get_boss_id(), current_health, max_health)
+	if not phase2_active and current_health <= phase2_health_threshold and current_health > 0:
+		_activate_phase2()
 	if current_health == 0:
 		_die()
 
@@ -253,8 +291,12 @@ func _die() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	_clear_telegraph()
+	for minion: Node2D in phase2_minions:
+		if is_instance_valid(minion):
+			minion.queue_free()
+	phase2_minions.clear()
 	_set_arena_active(false)
-	_disable_chains()
 	died.emit()
 	var event_bus: Node = _get_event_bus()
 	if event_bus != null:
@@ -267,12 +309,41 @@ func _die() -> void:
 	tween.chain().tween_callback(queue_free)
 
 
-func _disable_chains() -> void:
-	chains.visible = false
-	for area: Area2D in _chain_areas:
-		area.set_deferred(&"monitoring", false)
-		area.set_deferred(&"monitorable", false)
-	_hit_cooldowns.clear()
+func _activate_phase2() -> void:
+	phase2_active = true
+	var transition: Tween = create_tween()
+	transition.tween_property(core_seal, "color", phase2_tint, 0.45)
+	transition.parallel().tween_property(core, "scale", _base_core_scale * 1.2, 0.2)
+	transition.tween_property(core, "scale", _base_core_scale, 0.25)
+	_spawn_phase2_minions()
+
+
+func _spawn_phase2_minions() -> void:
+	var target: Node2D = _get_target()
+	var detection_radius: float = maxf(arena_radius * 2.0, 440.0)
+	for i: int in phase2_minion_count:
+		if phase2_minion_scene == null:
+			continue
+		var minion: Node2D = phase2_minion_scene.instantiate() as Node2D
+		var angle: float = TAU * float(i) / float(maxi(phase2_minion_count, 1)) + randf_range(-0.25, 0.25)
+		var distance: float = randf_range(70.0, maxf(arena_radius - 20.0, 70.0))
+		minion.position = spawn_position + Vector2.from_angle(angle) * distance
+		minion.set("data", phase2_minion_data)
+		minion.set("target_group", target_group)
+		minion.set("can_wander", false)
+		minion.set("wander_radius", arena_radius)
+		minion.set("require_line_of_sight", false)
+		minion.set("detection_radius", detection_radius)
+		get_parent().add_child(minion)
+		var detection_shape: CollisionShape2D = minion.get_node_or_null(^"DetectionArea/DetectionRadius") as CollisionShape2D
+		if detection_shape != null and detection_shape.shape is CircleShape2D:
+			var circle: CircleShape2D = detection_shape.shape.duplicate() as CircleShape2D
+			circle.radius = detection_radius
+			detection_shape.shape = circle
+		if is_instance_valid(target):
+			minion.set("candidate_target", target)
+			minion.set("target", target)
+		phase2_minions.append(minion)
 
 
 func _play_hit_squash() -> void:
@@ -302,12 +373,6 @@ func _spawn_damage_number(amount: int) -> void:
 	tween.tween_property(dmg_label, "global_position:y", dmg_label.global_position.y - 24.0, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(dmg_label, "modulate:a", 0.0, 0.55).set_delay(0.12)
 	tween.chain().tween_callback(dmg_label.queue_free)
-
-
-func get_chain_reach(i: int) -> float:
-	if i < 0 or i >= _chain_reaches.size():
-		return 0.0
-	return _chain_reaches[i]
 
 
 func _get_boss_id() -> String:
