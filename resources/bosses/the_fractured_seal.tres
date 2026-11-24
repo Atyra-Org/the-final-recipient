@@ -1,27 +1,10 @@
-[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="BossData" format=3 uid="uid://dpnjjns7j68w6"]
 
-[ext_resource type="Script" path="res://scripts/resources/boss_data.gd" id="1_bossdata"]
-[ext_resource type="Texture2D" path="res://assets/sprites/effects/Retro Impact Effect Pack 3 A.png" id="2_explosion"]
+[ext_resource type="Script" uid="uid://cva1jlvg5gd4q" path="res://scripts/resources/boss_data.gd" id="1_bossdata"]
+[ext_resource type="Texture2D" uid="uid://bbctbampisuqa" path="res://assets/sprites/effects/Retro Impact Effect Pack 3 A.png" id="2_explosion"]
+[ext_resource type="Resource" uid="uid://dr2r7qyimjwtm" path="res://resources/enemies/greedy_gremlin.tres" id="2_s17wu"]
+[ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="3_rget4"]
 
 [resource]
 script = ExtResource("1_bossdata")
-id = &"the_fractured_seal"
-boss_name = "The Fractured Seal"
-max_health = 300
-arena_radius = 220.0
-aoe_radius = 56.0
-aoe_charge_duration = 1.6
-aoe_lock_ratio = 0.8
-aoe_cooldown = 1.4
-aoe_damage = 20
-aoe_knockback = 200.0
-target_group = &"player"
-phase2_health_threshold = 30
-phase2_tint = Color(1, 0.3, 0.45, 1)
-phase2_minion_count = 2
-phase2_aoe_cooldown_multiplier = 0.75
-explosion_hframes = 6
-explosion_vframes = 24
-explosion_row = 22
-explosion_frame_count = 6
 explosion_texture = ExtResource("2_explosion")

@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://dnicl1ku7yrpi"]
 
-[ext_resource type="Script" path="res://scripts/ui/boss_health_bar.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://hj0n5fwweolo" path="res://scripts/ui/boss_health_bar.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://cj3fyypgilwov" path="res://assets/fonts/monogram/ttf/monogram.ttf" id="2_p4u1e"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.0823529, 0.0313726, 0.0862745, 0.901961)
@@ -21,11 +22,11 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[node name="BossHealthBar" type="CanvasLayer"]
+[node name="BossHealthBar" type="CanvasLayer" unique_id=2034673017]
 layer = 12
 script = ExtResource("1_script")
 
-[node name="Root" type="Control" parent="."]
+[node name="Root" type="Control" parent="." unique_id=1743840682]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -34,36 +35,40 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="NameLabel" type="Label" parent="Root"]
+[node name="NameLabel" type="Label" parent="Root" unique_id=1063103244]
+texture_filter = 1
+layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -280.0
-offset_top = -56.0
+offset_top = -50.0
 offset_right = 280.0
-offset_bottom = -34.0
+offset_bottom = -28.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.905882, 0.858824, 0.921569, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 14
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("2_p4u1e")
+theme_override_font_sizes/font_size = 16
 text = "The Fractured Seal"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Bar" type="ProgressBar" parent="Root"]
+[node name="Bar" type="ProgressBar" parent="Root" unique_id=435986042]
+layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -280.0
-offset_top = -32.0
+offset_top = -26.0
 offset_right = 280.0
-offset_bottom = -8.0
+offset_bottom = -19.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/background = SubResource("StyleBoxFlat_bg")
