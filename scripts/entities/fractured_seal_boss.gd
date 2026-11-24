@@ -32,9 +32,14 @@ class Explosion extends Node2D:
 	var radius: float = 56.0
 	var age: float = 0.0
 	var duration: float = 0.35
+	var sprite: Sprite2D = null
+	var first_frame: int = 0
+	var frame_count: int = 1
 
 	func _process(delta: float) -> void:
 		age += delta
+		if sprite != null:
+			sprite.frame = first_frame + mini(int(age / duration * float(frame_count)), frame_count - 1)
 		queue_redraw()
 		if age >= duration:
 			queue_free()
@@ -51,7 +56,11 @@ class Explosion extends Node2D:
 @export var data: BossData = null
 
 @export_category("Arena And AoE Telegraph")
-@export var arena_radius: float = 220.0
+@export var arena_radius: float = 220.0:
+	set(value):
+		arena_radius = maxf(value, 1.0)
+		if _initialized:
+			_apply_arena_radius()
 @export var aoe_radius: float = 56.0
 @export var aoe_charge_duration: float = 1.6
 @export var aoe_lock_ratio: float = 0.8
@@ -69,7 +78,16 @@ class Explosion extends Node2D:
 @export var phase2_aoe_cooldown_multiplier: float = 0.75
 
 @export_category("Stats")
-@export var max_health: int = 300
+@export var max_health: int = 300:
+	set(value):
+		var damage_taken: int = max_health - current_health
+		max_health = maxi(value, 1)
+		if _initialized and not is_dead:
+			current_health = clampi(max_health - damage_taken, 0, max_health)
+			if is_instance_valid(health_bar):
+				health_bar.set_health(current_health, max_health)
+			if current_health == 0:
+				_die()
 
 @onready var arena_area: Area2D = $ArenaArea
 @onready var arena_shape: CollisionShape2D = $ArenaArea/ArenaShape
@@ -93,6 +111,7 @@ var phase2_minions: Array[Node2D] = []
 var _bob_time: float = 0.0
 var _base_core_scale: Vector2 = Vector2.ONE
 var _squash_tween: Tween = null
+var _initialized: bool = false
 
 
 func _ready() -> void:
@@ -101,6 +120,7 @@ func _ready() -> void:
 	_apply_data()
 	spawn_position = global_position
 	current_health = max_health
+	_initialized = true
 	_base_core_scale = core.scale
 	_apply_arena_radius()
 	_set_arena_active(false)
@@ -112,21 +132,12 @@ func _ready() -> void:
 func _apply_data() -> void:
 	if data == null:
 		return
-	max_health = data.max_health
-	arena_radius = data.arena_radius
-	aoe_radius = data.aoe_radius
-	aoe_charge_duration = data.aoe_charge_duration
-	aoe_lock_ratio = data.aoe_lock_ratio
-	aoe_cooldown = data.aoe_cooldown
-	aoe_damage = data.aoe_damage
-	aoe_knockback = data.aoe_knockback
-	target_group = data.target_group
-	phase2_health_threshold = data.phase2_health_threshold
-	phase2_tint = data.phase2_tint
-	phase2_minion_scene = data.phase2_minion_scene
-	phase2_minion_data = data.phase2_minion_data
-	phase2_minion_count = data.phase2_minion_count
-	phase2_aoe_cooldown_multiplier = data.phase2_aoe_cooldown_multiplier
+	var defaults: BossData = BossData.new()
+	for property: Dictionary in defaults.get_script().get_script_property_list():
+		var property_name: StringName = property["name"]
+		if property_name in self and int(property["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE:
+			if get(property_name) == defaults.get(property_name):
+				set(property_name, data.get(property_name))
 	_apply_visual_data()
 
 
@@ -206,8 +217,8 @@ func _ensure_health_bar() -> void:
 func _start_telegraph() -> void:
 	active_telegraph = Telegraph.new()
 	active_telegraph.radius = aoe_radius
-	active_telegraph.position = global_position
 	telegraphs.add_child(active_telegraph)
+	active_telegraph.global_position = global_position
 	telegraph_progress = 0.0
 	locked_position = global_position
 
@@ -240,20 +251,27 @@ func _detonate(position: Vector2) -> void:
 	_clear_telegraph()
 	aoe_cooldown_timer = aoe_cooldown * (phase2_aoe_cooldown_multiplier if phase2_active else 1.0)
 	var explosion: Explosion = Explosion.new()
+	explosion.name = &"AoEExplosion"
 	explosion.radius = aoe_radius
+	explosion.top_level = true
+	explosion.z_as_relative = false
+	explosion.z_index = 20
+	explosion.visible = true
+	explosion.modulate = Color.WHITE
+	get_tree().root.add_child(explosion)
 	explosion.global_position = position
-	telegraphs.add_child(explosion)
 	if data != null and data.explosion_texture != null:
 		var sprite: Sprite2D = Sprite2D.new()
 		sprite.texture = data.explosion_texture
-		sprite.hframes = data.explosion_hframes
-		sprite.vframes = data.explosion_vframes
-		sprite.frame = data.explosion_row * data.explosion_hframes
-		sprite.scale = Vector2.ONE * aoe_radius / 32.0
-		sprite.modulate.a = 0.9
+		sprite.hframes = maxi(data.explosion_hframes, 1)
+		sprite.vframes = maxi(data.explosion_vframes, 1)
+		explosion.first_frame = clampi(data.explosion_row, 0, sprite.vframes - 1) * sprite.hframes
+		explosion.frame_count = clampi(data.explosion_frame_count, 1, sprite.hframes)
+		sprite.frame = explosion.first_frame
+		var frame_size: Vector2 = sprite.texture.get_size() / Vector2(sprite.hframes, sprite.vframes)
+		sprite.scale = Vector2.ONE * aoe_radius * 2.0 / maxf(frame_size.x, frame_size.y)
 		explosion.add_child(sprite)
-		var sprite_tween: Tween = sprite.create_tween()
-		sprite_tween.tween_property(sprite, "modulate:a", 0.0, explosion.duration)
+		explosion.sprite = sprite
 	var target: Node2D = _get_target()
 	if is_instance_valid(target) and target.global_position.distance_to(position) <= aoe_radius and target.global_position.distance_to(global_position) <= arena_radius:
 		var direction: Vector2 = position.direction_to(target.global_position)
@@ -391,4 +409,4 @@ func _get_event_bus() -> Node:
 	var tree: SceneTree = get_tree()
 	if tree == null or tree.root == null:
 		return null
-	return tree.root.get_node_or_null(^"EventBus")
+	return get_tree().root.get_node_or_null(^"EventBus")

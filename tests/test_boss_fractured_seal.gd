@@ -103,7 +103,84 @@ func _run() -> void:
 	boss.take_damage(30)
 	_check("boss death event", int(_events["died"]) == 1 and boss.is_dead)
 	_check("minions queued on boss death", boss.phase2_minions.is_empty())
+	await _test_overrides()
+	await _test_explosions()
 	_finish()
+
+func _test_overrides() -> void:
+	var scene: PackedScene = load("res://scenes/characters/fractured_seal_boss.tscn") as PackedScene
+	var boss: FracturedSealBoss = scene.instantiate() as FracturedSealBoss
+	boss.max_health = 10
+	boss.arena_radius = 180.0
+	boss.aoe_damage = 7
+	boss.phase2_minion_count = 0
+	root.add_child(boss)
+	boss.set_physics_process(false)
+	boss._set_arena_active(true)
+	_check("instance health override survives ready", boss.max_health == 10 and boss.current_health == 10)
+	_check("health bar uses overridden max", boss.health_bar.bar.max_value == 10.0 and boss.health_bar.bar.value == 10.0)
+	_check("arena and attack overrides survive ready", is_equal_approx((boss.arena_shape.shape as CircleShape2D).radius, 180.0) and boss.aoe_damage == 7 and boss.phase2_minion_count == 0)
+	boss.take_damage(10)
+	_check("override boss dies in one hit", boss.is_dead and boss.current_health == 0 and not boss.health_bar.visible)
+	var inherited: FracturedSealBoss = scene.instantiate() as FracturedSealBoss
+	inherited.data = inherited.data.duplicate() as BossData
+	inherited.data.max_health = 123
+	inherited.data.arena_radius = 190.0
+	root.add_child(inherited)
+	inherited.set_physics_process(false)
+	inherited._set_arena_active(true)
+	_check("resource applies to untouched defaults", inherited.max_health == 123 and inherited.current_health == 123 and is_equal_approx(inherited.arena_radius, 190.0))
+	inherited.max_health = 20
+	inherited.arena_radius = 150.0
+	_check("runtime health setter syncs current and bar", inherited.current_health == 20 and inherited.health_bar.bar.max_value == 20.0)
+	_check("runtime arena setter syncs detection", is_equal_approx((inherited.arena_shape.shape as CircleShape2D).radius, 150.0))
+	inherited.take_damage(5)
+	inherited.max_health = 40
+	_check("runtime max change preserves damage", inherited.current_health == 35 and inherited.health_bar.bar.max_value == 40.0)
+	inherited.queue_free()
+
+func _test_explosions() -> void:
+	await create_timer(0.45).timeout
+	var scene: PackedScene = load("res://scenes/characters/fractured_seal_boss.tscn") as PackedScene
+	for textured: bool in [true, false]:
+		var parent: Node2D = Node2D.new()
+		parent.position = Vector2(70.0, 45.0)
+		parent.scale = Vector2(1.5, 1.5)
+		root.add_child(parent)
+		var boss: FracturedSealBoss = scene.instantiate() as FracturedSealBoss
+		boss.data = boss.data.duplicate() as BossData
+		if not textured:
+			boss.data.explosion_texture = null
+		boss.position = Vector2(388.0, 211.0)
+		parent.add_child(boss)
+		boss.set_physics_process(false)
+		var point: Vector2 = boss.global_position + Vector2(80.0, 20.0)
+		boss._detonate(point)
+		var effects: Array[Node] = []
+		for child: Node in root.find_children("*", "Node2D", true, false):
+			if child is FracturedSealBoss.Explosion:
+				effects.append(child)
+		_check("explosion appears in tree", effects.size() == 1)
+		if effects.is_empty():
+			parent.queue_free()
+			continue
+		var effect: Node2D = effects[0] as Node2D
+		_check("explosion world position", effect.global_position.is_equal_approx(point))
+		_check("explosion visible above floor", effect.is_visible_in_tree() and effect.modulate.a == 1.0 and effect.z_index >= 20)
+		var sprite: Sprite2D = effect.get_child(0) as Sprite2D if textured else null
+		var initial_frame: int = sprite.frame if sprite != null else -1
+		if textured:
+			_check("spritesheet frame geometry", sprite != null and sprite.hframes == 6 and sprite.vframes == 24 and sprite.texture.get_size() / Vector2(6.0, 24.0) == Vector2(32.0, 32.0) and initial_frame == 132)
+		await create_timer(0.12).timeout
+		_check("explosion survives animation start", is_instance_valid(effect))
+		if textured and is_instance_valid(sprite):
+			_check("explosion sprite animates", sprite.frame > initial_frame and sprite.frame <= 137)
+		boss.queue_free()
+		await process_frame
+		_check("explosion survives boss deletion", is_instance_valid(effect))
+		await create_timer(0.45).timeout
+		_check("explosion cleans itself up", not is_instance_valid(effect))
+		parent.queue_free()
 
 func _finish() -> void:
 	print("Test Boss Fractured Seal: %d passed, %d failed" % [passed, failed])
