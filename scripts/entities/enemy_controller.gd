@@ -101,6 +101,9 @@ func _ready() -> void:
 			attack_hitbox.body_entered.connect(_on_attack_hitbox_body_entered)
 
 	_update_animation()
+	var event_bus: Node = _get_event_bus()
+	if event_bus != null:
+		event_bus.emit_signal(&"enemy_spawned", self, _get_enemy_id())
 
 
 func _apply_data() -> void:
@@ -147,7 +150,17 @@ func _apply_detection_data() -> void:
 		circle.radius = data.detection_radius
 		detection_radius.shape = circle
 
+func _get_enemy_id() -> String:
+	if data != null and not data.id.is_empty():
+		return String(data.id)
+	return name
 
+func _get_event_bus() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null or tree.root == null:
+		return null
+	return tree.root.get_node_or_null(^"EventBus")
+	
 func _update_observed_state() -> bool:
 	if not freeze_when_observed or not is_instance_valid(target):
 		_resume_after_observation()
@@ -350,6 +363,9 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 
 	current_health = maxi(current_health - amount, 0)
 	health_changed.emit(current_health, max_health)
+	var event_bus: Node = _get_event_bus()
+	if event_bus != null:
+		event_bus.emit_signal(&"enemy_health_changed", self, _get_enemy_id(), current_health, max_health)
 	velocity = knockback_force
 
 	if is_instance_valid(health_bar):
@@ -371,6 +387,9 @@ func _die() -> void:
 	current_state = State.DEAD
 	velocity = Vector2.ZERO
 	died.emit()
+	var event_bus: Node = _get_event_bus()
+	if event_bus != null:
+		event_bus.emit_signal(&"enemy_died", self, _get_enemy_id(), global_position)
 
 	_disable_attack_hitbox()
 	if is_instance_valid(body_collision):

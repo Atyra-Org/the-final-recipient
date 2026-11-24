@@ -1,0 +1,148 @@
+[gd_scene format=3 uid="uid://7osodyngpcw6"]
+
+[ext_resource type="Theme" uid="uid://byj4smdmp37yq" path="res://resources/themes/main_menu_theme.tres" id="1_sl1te"]
+[ext_resource type="Script" uid="uid://c86pr1fwdr2pm" path="res://scripts/ui/main_menu.gd" id="2_fe2o3"]
+
+[node name="MainMenu" type="Control" unique_id=1719929171]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_sl1te")
+script = ExtResource("2_fe2o3")
+first_level_scene = "uid://wprqvuc2e122"
+fade_out_scene_duration = 2.0
+
+[node name="BackgroundPlaceholder" type="ColorRect" parent="." unique_id=1220063150]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.050980393, 0.05882353, 0.09411765, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=830078694]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuVBox" type="VBoxContainer" parent="CenterContainer" unique_id=265294663]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="TitleBox" type="VBoxContainer" parent="CenterContainer/MenuVBox" unique_id=1770495579]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/MenuVBox/TitleBox" unique_id=364288648]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 36
+text = "THE FINAL RECIPIENT"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/MenuVBox/TitleBox" unique_id=1669000840]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Whispers of the Unwritten"
+horizontal_alignment = 1
+
+[node name="ButtonBox" type="VBoxContainer" parent="CenterContainer/MenuVBox" unique_id=831818661]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NewGameButton" type="Button" parent="CenterContainer/MenuVBox/ButtonBox" unique_id=956011921]
+unique_name_in_owner = true
+layout_mode = 2
+text = "New Game"
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/MenuVBox/ButtonBox" unique_id=1723462671]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Continue"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MenuVBox/ButtonBox" unique_id=1351156410]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="CenterContainer/MenuVBox/ButtonBox" unique_id=719607568]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Quit"
+
+[node name="SettingsPanel" type="PanelContainer" parent="." unique_id=678668711]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(360, 220)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.5
+offset_right = 128.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SettingsMargin" type="MarginContainer" parent="SettingsPanel" unique_id=1003956681]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel/SettingsMargin" unique_id=830830105]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SettingsTitle" type="Label" parent="SettingsPanel/SettingsMargin/SettingsVBox" unique_id=1766217169]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS"
+horizontal_alignment = 1
+
+[node name="SettingsDummyInfo" type="Label" parent="SettingsPanel/SettingsMargin/SettingsVBox" unique_id=1288117210]
+layout_mode = 2
+text = "Audio & Display options placeholder"
+horizontal_alignment = 1
+
+[node name="CloseSettingsButton" type="Button" parent="SettingsPanel/SettingsMargin/SettingsVBox" unique_id=763376037]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
+
+[node name="FadeOverlay" type="ColorRect" parent="." unique_id=473921525]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="FadeOverlay" unique_id=303832817]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -8.5
+offset_right = 20.0
+offset_bottom = 8.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 24
+text = "Present by Atyra Studio"
