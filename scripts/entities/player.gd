@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
-const WALK_SPEED = 65.0
-const RUN_SPEED = 170.0
+const WALK_SPEED = 85.0
+# const RUN_SPEED = 170.0
 const DASH_DURATION = 0.2
 const DASH_SPEED = 360.0
 const DASH_COOLDOWN = 1.5
@@ -10,7 +10,7 @@ const KNOCKBACK_TIMER = 1000.0
 
 var input_vector := Vector2.ZERO
 var facing_direction := Vector2.DOWN
-var is_running: bool = false
+# var is_running: bool = false
 var is_attacking: bool = false
 var is_dashing: bool = false
 var dash_timer: float = 0.0
@@ -40,6 +40,9 @@ func _ready() -> void:
 
 	state_machine = animation_tree.get("parameters/StateMachine/playback")
 	move_state_machine = animation_tree.get("parameters/StateMachine/MoveState/playback")
+	
+	EventBus.gesture_recognized.connect(_on_gesture_recognized)
+	EventBus.gesture_failed.connect(_on_gesture_failed)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -62,7 +65,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	input_vector = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	is_running = Input.is_action_pressed("run")
+	# is_running = Input.is_action_pressed("run")
 	
 	if Input.is_action_just_pressed("dash"):
 		_start_dash()
@@ -83,20 +86,20 @@ func _physics_process(delta: float) -> void:
 		facing_direction = Vector2(input_vector.x, -input_vector.y).normalized()
 		
 		animation_tree.set("parameters/StateMachine/MoveState/WalkState/blend_position", facing_direction)
-		animation_tree.set("parameters/StateMachine/MoveState/RunState/blend_position", facing_direction)
+		# animation_tree.set("parameters/StateMachine/MoveState/RunState/blend_position", facing_direction)
 		animation_tree.set("parameters/StateMachine/MoveState/IdleState/blend_position", facing_direction)
 
-		if is_running:
-			move_state_machine.travel("RunState")
-		else:
-			move_state_machine.travel("WalkState")
+		# if is_running:
+			# move_state_machine.travel("RunState")
+		# else:
+		move_state_machine.travel("WalkState")
 	else:
 		move_state_machine.travel("IdleState")
 
-	if is_running:
-		velocity = input_vector * RUN_SPEED
-	else:
-		velocity = input_vector * WALK_SPEED
+	# if is_running:
+		# velocity = input_vector * RUN_SPEED
+	# else:
+	velocity = input_vector * WALK_SPEED
 
 	move_and_slide()
 
@@ -265,3 +268,33 @@ func _on_animation_player_animation_finished(anim_name: StringName) -> void:
 		
 		state_machine.travel("MoveState")
 		move_state_machine.travel("IdleState")
+		
+func _on_gesture_recognized(gesture_name: String, score: float) -> void:
+	if is_dead or is_hurt:
+		return
+	#print("Gesture terdeteksi: % (akurasi: %.2f)" % [gesture_name, score])
+	
+	match gesture_name:
+		"line_horizontal":
+			_cast_slash_wave()
+		"circle":
+			_cast_heal_or_shield()
+		"triangle":
+			_cast_piercing_burst()
+		
+func _on_gesture_failed() -> void:
+	print("Pola sihir gagal dikenali")
+
+func _cast_slash_wave() -> void:
+	_start_attack()
+	
+func _cast_heal_or_shield() -> void:
+	health = clampi(health + 20, 0, max_health)
+	health_changed.emit(health, max_health)
+	
+func _cast_piercing_burst() -> void:
+	if not is_dashing:
+		is_dashing = true
+		dash_timer = DASH_DURATION
+		dash_direction = Vector2(facing_direction.x, -facing_direction.y).normalized()
+		_play_dash_animation()
