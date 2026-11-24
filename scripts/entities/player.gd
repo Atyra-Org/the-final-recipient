@@ -7,6 +7,9 @@ const DASH_SPEED = 360.0
 const DASH_COOLDOWN = 1.5
 const KNOCKBACK_FORCE = 250.0
 const KNOCKBACK_TIMER = 1000.0
+const MANA_REGEN_DELAY: float = 5.0
+const MANA_REGEN_INTERVAL: float = 0.15
+const MANA_REGEN_AMOUNT: int = 1
 
 var input_vector := Vector2.ZERO
 var facing_direction := Vector2.DOWN
@@ -23,6 +26,11 @@ var health: int = 0
 var dash_cooldown_timer: float = 0.0
 var is_dead: bool = false
 var is_hurt: bool = false
+@export var max_mana: int = 500
+var mana: int = 0
+var mana_regen_timer: float = 0.0
+var mana_regen_interval_timer: float = 0.0
+var is_regenerating_mana: bool = false
 
 @onready var animation_tree: AnimationTree = $AnimationTree
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
@@ -31,12 +39,16 @@ var is_hurt: bool = false
 var state_machine: AnimationNodeStateMachinePlayback
 var move_state_machine: AnimationNodeStateMachinePlayback
 signal health_changed(current_health, max_health)
+signal mana_changed(current_mana, max_mana)
 
 func _ready() -> void:
 	add_to_group(&"player")
 	hitbox.monitoring = false
 	health = max_health
+	mana = max_mana
+	
 	health_changed.emit(health, max_health)
+	mana_changed.emit(mana, max_health)
 
 	state_machine = animation_tree.get("parameters/StateMachine/playback")
 	move_state_machine = animation_tree.get("parameters/StateMachine/MoveState/playback")
@@ -272,15 +284,21 @@ func _on_animation_player_animation_finished(anim_name: StringName) -> void:
 func _on_gesture_recognized(gesture_name: String, score: float) -> void:
 	if is_dead or is_hurt:
 		return
-	#print("Gesture terdeteksi: % (akurasi: %.2f)" % [gesture_name, score])
 	
 	match gesture_name:
 		"line_horizontal":
+			if not use_mana(50):
+				return
 			_cast_slash_wave()
+			_reset_mana_regen_delay()
 		"circle":
+			if not use_mana(50):
+				return
 			_cast_heal_or_shield()
+			_reset_mana_regen_delay()
 		"triangle":
 			_cast_piercing_burst()
+			_reset_mana_regen_delay()
 		
 func _on_gesture_failed() -> void:
 	print("Pola sihir gagal dikenali")
@@ -298,3 +316,48 @@ func _cast_piercing_burst() -> void:
 		dash_timer = DASH_DURATION
 		dash_direction = Vector2(facing_direction.x, -facing_direction.y).normalized()
 		_play_dash_animation()
+
+func use_mana(amount: int) -> bool:
+	if mana < amount:
+		print("Mana tidak cukup!")
+		return false
+		
+	mana -= amount
+	mana = clampi(mana, 0, max_mana)
+	
+	mana_changed.emit(mana, max_mana)
+	
+	return true
+
+func _process(delta: float) -> void:
+	if mana >= max_mana:
+		is_regenerating_mana = false
+		mana_regen_timer = 0.0
+		mana_regen_interval_timer = 0.0
+		return
+		
+	if not is_regenerating_mana:
+		mana_regen_timer += delta
+		
+		if mana_regen_timer >= MANA_REGEN_DELAY:
+			is_regenerating_mana = true
+			mana_regen_interval_timer = mana_regen_timer - MANA_REGEN_DELAY
+			
+	else:
+		mana_regen_interval_timer += delta
+	
+	while mana_regen_interval_timer >= MANA_REGEN_INTERVAL and mana < max_mana:
+		mana_regen_interval_timer -= MANA_REGEN_INTERVAL
+		mana = mini(mana + MANA_REGEN_AMOUNT, max_mana)
+		
+		mana_changed.emit(mana, max_mana)
+		
+	if mana >= max_mana:
+		is_regenerating_mana = false
+		mana_regen_timer = 0.0
+		mana_regen_interval_timer = 0.0
+		
+func _reset_mana_regen_delay() -> void:
+	is_regenerating_mana = false
+	mana_regen_timer = 0.0
+	mana_regen_interval_timer = 0.0
