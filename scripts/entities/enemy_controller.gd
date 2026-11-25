@@ -11,7 +11,8 @@ enum State {
 	INVESTIGATE,
 	ATTACK,
 	HURT,
-	DEAD
+	DEAD,
+	BOUND
 }
 
 @export var data: EnemyData = null
@@ -47,6 +48,11 @@ enum State {
 @export var freeze_when_observed: bool = false
 @export var observer_fov_angle: float = 75.0
 
+@export_group("Debug")
+@export var debug_bind_loop_on_start: bool = false
+@export var debug_bind_hotkey_enabled: bool = false
+@export var debug_bind_duration: float = 3.0
+
 @onready var detection_area: Area2D = $DetectionArea
 @onready var detection_radius: CollisionShape2D = $DetectionArea/DetectionRadius
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -69,6 +75,8 @@ var last_known_position: Vector2 = Vector2.ZERO
 var reached_last_known: bool = false
 var candidate_target: Node2D = null
 var stuck_timer: float = 0.0
+var bind_timer: float = 0.0
+var _bind_original_modulate: Color = Color.WHITE
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
@@ -103,7 +111,15 @@ func _ready() -> void:
 	_update_animation()
 	var event_bus: Node = _get_event_bus()
 	if event_bus != null:
+		event_bus.connect(&"enemy_bind_requested", _on_enemy_bind_requested)
 		event_bus.emit_signal(&"enemy_spawned", self, _get_enemy_id())
+	if debug_bind_loop_on_start:
+		apply_bind(999999.0)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if debug_bind_hotkey_enabled and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
+		apply_bind(debug_bind_duration)
 
 
 func _apply_data() -> void:
@@ -159,7 +175,28 @@ func _get_event_bus() -> Node:
 	var tree: SceneTree = get_tree()
 	if tree == null or tree.root == null:
 		return null
-	return tree.root.get_node_or_null(^"EventBus")
+	return get_tree().root.get_node_or_null(^"EventBus")
+
+func _on_enemy_bind_requested(enemy: Node2D, duration: float) -> void:
+	if enemy == self:
+		apply_bind(duration)
+
+func apply_bind(duration: float = 2.5) -> void:
+	if current_state == State.DEAD or not is_finite(duration) or duration <= 0.0:
+		return
+	if bind_timer <= 0.0:
+		_bind_original_modulate = animated_sprite.modulate
+	bind_timer = maxf(bind_timer, duration)
+	current_state = State.BOUND
+	velocity = Vector2.ZERO
+	_disable_attack_hitbox()
+	var animation: StringName = StringName("bind_" + facing_direction)
+	if animated_sprite.sprite_frames != null and animated_sprite.sprite_frames.has_animation(animation):
+		animated_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		animated_sprite.play(animation)
+	else:
+		animated_sprite.modulate = Color(1.0, 0.8, 0.2)
+		animated_sprite.pause()
 	
 func _update_observed_state() -> bool:
 	if not freeze_when_observed or not is_instance_valid(target):
@@ -224,6 +261,18 @@ func _resume_after_observation() -> void:
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEAD:
 		return
+	if bind_timer > 0.0:
+		bind_timer = maxf(0.0, bind_timer - delta)
+		velocity = Vector2.ZERO
+		_disable_attack_hitbox()
+		if bind_timer > 0.0:
+			return
+		animated_sprite.modulate = _bind_original_modulate
+		if is_instance_valid(target):
+			_transition_to_state(State.CHASE)
+		else:
+			_enter_idle_with_timer()
+		_update_animation()
 
 	if attack_cooldown_timer > 0.0:
 		attack_cooldown_timer -= delta
@@ -321,6 +370,9 @@ func _process_hurt_state(delta: float) -> void:
 func _transition_to_state(new_state: State, new_target: Node2D = target) -> void:
 	if current_state == State.DEAD:
 		return
+	if bind_timer > 0.0:
+		target = new_target
+		return
 	if current_state == State.ATTACK and new_state != State.ATTACK:
 		_disable_attack_hitbox()
 	current_state = new_state
@@ -345,6 +397,8 @@ func _pick_new_wander_target() -> void:
 
 
 func _start_attack() -> void:
+	if current_state == State.DEAD or bind_timer > 0.0:
+		return
 	if _update_observed_state():
 		return
 	_transition_to_state(State.ATTACK)
@@ -376,6 +430,8 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 
 	if current_health == 0:
 		_die()
+	elif bind_timer > 0.0:
+		velocity = Vector2.ZERO
 	else:
 		_disable_attack_hitbox()
 		_transition_to_state(State.HURT)
@@ -383,6 +439,8 @@ func take_damage(amount: int, knockback_force: Vector2 = Vector2.ZERO) -> void:
 
 
 func _die() -> void:
+	bind_timer = 0.0
+	animated_sprite.modulate = _bind_original_modulate
 	candidate_target = null
 	current_state = State.DEAD
 	velocity = Vector2.ZERO
@@ -418,7 +476,7 @@ func _update_facing_direction(dir: Vector2) -> void:
 
 
 func _update_animation() -> void:
-	if current_state in [State.ATTACK, State.HURT, State.DEAD]:
+	if current_state in [State.ATTACK, State.HURT, State.DEAD, State.BOUND]:
 		return
 
 	if not is_instance_valid(animated_sprite) or animated_sprite.sprite_frames == null:

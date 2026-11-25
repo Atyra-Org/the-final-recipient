@@ -14,6 +14,15 @@ func _initialize() -> void:
 	_case_b_horizontal_line()
 	_case_c_invalid_stroke()
 	_case_d_direction_invariance()
+	_check_variants("v", [Vector2.ZERO, Vector2(60.0, 100.0), Vector2(120.0, 0.0)])
+	_check_variants("caret", [Vector2(0.0, 100.0), Vector2(60.0, 0.0), Vector2(120.0, 100.0)])
+	_check_variants("star", [Vector2(60.0, 0.0), Vector2(95.0, 110.0), Vector2(0.0, 42.0), Vector2(120.0, 42.0), Vector2(25.0, 110.0), Vector2(60.0, 0.0)])
+	_check_variants("zigzag", [Vector2.ZERO, Vector2(40.0, 80.0), Vector2(80.0, 0.0), Vector2(120.0, 80.0), Vector2(160.0, 0.0)])
+	_check_variants("line_horizontal", [Vector2.ZERO, Vector2(60.0, 0.0), Vector2(120.0, 0.0)])
+	_check_variants("circle", _closed_circle(32, 80.0))
+	_check_variants("triangle", [Vector2.ZERO, Vector2(120.0, 0.0), Vector2(60.0, -104.0), Vector2.ZERO])
+	_case_manual_star_strokes()
+	_case_outline_star_strokes()
 	print("=== %d checks, %d failed ===" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -35,11 +44,11 @@ func _case_a_event_bus() -> void:
 		bus = EventBusScript.new()
 		root.add_child(bus)
 
-	var seen := {}
-	bus.gesture_recognized.connect(func(n: String, s: float): seen["gesture"] = [n, s])
-	bus.gesture_failed.connect(func(): seen["failed"] = true)
-	bus.letter_trigger_activated.connect(func(id: String): seen["letter"] = id)
-	bus.player_state_changed.connect(func(s: String): seen["state"] = s)
+	var seen: Dictionary = {}
+	bus.gesture_recognized.connect(func(n: String, s: float) -> void: seen["gesture"] = [n, s])
+	bus.gesture_failed.connect(func() -> void: seen["failed"] = true)
+	bus.letter_trigger_activated.connect(func(id: String) -> void: seen["letter"] = id)
+	bus.player_state_changed.connect(func(s: String) -> void: seen["state"] = s)
 
 	bus.gesture_recognized.emit("circle", 0.91)
 	bus.gesture_failed.emit()
@@ -57,12 +66,12 @@ func _case_a_event_bus() -> void:
 
 func _case_b_horizontal_line() -> void:
 	print("[Case B] rough horizontal line -> line_horizontal, score >= 0.75")
-	var recognizer = Recognizer.new()
+	var recognizer: Recognizer = Recognizer.new()
 	var stroke: Array[Vector2] = []
-	for i in 25:
-		var x := float(i) * 12.0
+	for i: int in 25:
+		var x: float = float(i) * 12.0
 
-		var y := sin(float(i) * 1.7) * 3.0
+		var y: float = sin(float(i) * 1.7) * 3.0
 		stroke.append(Vector2(x, y))
 
 	var result: Dictionary = recognizer.recognize(stroke)
@@ -73,8 +82,8 @@ func _case_b_horizontal_line() -> void:
 
 	var normalized: Array[Vector2] = recognizer.normalize(stroke)
 	_check("resample yields 64 points", normalized.size() == Recognizer.POINT_COUNT, "n=%d" % normalized.size())
-	var box := Rect2(normalized[0], Vector2.ZERO)
-	for p in normalized:
+	var box: Rect2 = Rect2(normalized[0], Vector2.ZERO)
+	for p: Vector2 in normalized:
 		box = box.expand(p)
 	_check("scaled to 250 bounding box", is_equal_approx(maxf(box.size.x, box.size.y), 250.0),
 		"longest=%.4f" % maxf(box.size.x, box.size.y))
@@ -84,7 +93,7 @@ func _case_b_horizontal_line() -> void:
 
 func _case_c_invalid_stroke() -> void:
 	print("[Case C] invalid / noisy strokes -> graceful failure")
-	var recognizer = Recognizer.new()
+	var recognizer: Recognizer = Recognizer.new()
 
 	var empty: Array[Vector2] = []
 	var empty_result: Dictionary = recognizer.recognize(empty)
@@ -98,7 +107,7 @@ func _case_c_invalid_stroke() -> void:
 
 
 	var duplicate: Array[Vector2] = []
-	for i in 10:
+	for i: int in 10:
 		duplicate.append(Vector2(50.0, 50.0))
 	var dup_result: Dictionary = recognizer.recognize(duplicate)
 	_check("zero-length stroke rejected (no NaN)",
@@ -113,15 +122,15 @@ func _case_c_invalid_stroke() -> void:
 
 func _case_d_direction_invariance() -> void:
 	print("[Case D] stroke direction must not change the match")
-	var recognizer = Recognizer.new()
+	var recognizer: Recognizer = Recognizer.new()
 
 	var circle := _closed_circle(60, 90.0)
 	var circle_ccw: Array[Vector2] = []
-	for p in circle:
+	for p: Vector2 in circle:
 		circle_ccw.append(Vector2(320.0, 180.0) * 2.0 - p)
 	var tri := _closed_triangle(90.0)
 	var tri_ccw: Array[Vector2] = []
-	for p in tri:
+	for p: Vector2 in tri:
 		tri_ccw.append(Vector2(320.0, 180.0) * 2.0 - p)
 
 	var cw_result: Dictionary = recognizer.recognize(circle)
@@ -147,8 +156,8 @@ func _case_d_direction_invariance() -> void:
 
 func _closed_circle(steps: int, radius: float) -> Array[Vector2]:
 	var out: Array[Vector2] = []
-	for i in steps + 1:
-		var t := TAU * float(i) / float(steps)
+	for i: int in steps + 1:
+		var t: float = TAU * float(i) / float(steps)
 		out.append(Vector2(320.0 + cos(t) * radius, 180.0 + sin(t) * radius))
 	return out
 
@@ -161,8 +170,128 @@ func _closed_triangle(radius: float) -> Array[Vector2]:
 		Vector2(320.0, 180.0 - radius),
 	]
 	var out: Array[Vector2] = []
-	for i in 3:
-		for k in 20:
+	for i: int in 3:
+		for k: int in 20:
 			out.append(corners[i].lerp(corners[i + 1], float(k) / 20.0))
 	out.append(corners[3])
 	return out
+
+
+func _check_variants(gesture_name: String, vertices: Array[Vector2]) -> void:
+	var recognizer: Recognizer = Recognizer.new()
+	for variant: int in 5:
+		var stroke: Array[Vector2] = []
+		for segment: int in vertices.size() - 1:
+			for sample: int in 16:
+				var point: Vector2 = vertices[segment].lerp(vertices[segment + 1], float(sample) / 16.0)
+				if variant >= 2:
+					point = point.rotated(-0.35 if variant == 2 else 0.4) * 1.7 + Vector2(420.0, -170.0)
+				if variant == 4:
+					point += Vector2(sin(float(stroke.size()) * 1.7), cos(float(stroke.size()) * 2.1)) * 1.5
+				stroke.append(point)
+		var endpoint: Vector2 = vertices[-1]
+		if variant >= 2:
+			endpoint = endpoint.rotated(-0.35 if variant == 2 else 0.4) * 1.7 + Vector2(420.0, -170.0)
+		stroke.append(endpoint)
+		if variant == 1 or variant == 3 or variant == 4:
+			stroke.reverse()
+		var result: Dictionary = recognizer.recognize(stroke)
+		_check("%s variant %d name" % [gesture_name, variant], result["name"] == gesture_name, str(result))
+		_check("%s variant %d score >= 0.90" % [gesture_name, variant], result["score"] >= 0.90, str(result["score"]))
+
+
+func _case_manual_star_strokes() -> void:
+	var top: Array[Vector2] = [Vector2(320.0, 20.0), Vector2(361.0, 123.0), Vector2(264.0, 62.0), Vector2(376.0, 55.0), Vector2(284.0, 127.0), Vector2(320.0, 20.0)]
+	var bottom_left: Array[Vector2] = [Vector2(284.0, 127.0), Vector2(320.0, 20.0), Vector2(361.0, 123.0), Vector2(264.0, 62.0), Vector2(376.0, 55.0), Vector2(284.0, 127.0)]
+	var open_star: Array[Vector2] = top.duplicate()
+	open_star[-1] = top[0].lerp(top[1], 0.07)
+	var candidates: Array = [
+		_sample_edges(bottom_left, 14),
+		_sample_edges(top, 14),
+		_sample_edges(_reverse_points(top), 14),
+		_sample_edges(open_star, 14),
+	]
+	var recognizer: Recognizer = Recognizer.new()
+	for i: int in candidates.size():
+		var stroke: Array[Vector2] = _add_mouse_noise(candidates[i], i)
+		var result: Dictionary = recognizer.recognize(stroke)
+		_check("manual star %d -> star" % i, result["name"] == "star", str(result))
+		_check("manual star %d high score" % i, result["score"] >= 0.90, str(result))
+	var triangle: Array[Vector2] = _sample_edges([Vector2(320.0, 20.0), Vector2(376.0, 127.0), Vector2(264.0, 127.0), Vector2(320.0, 20.0)], 24)
+	var triangle_result: Dictionary = recognizer.recognize(triangle)
+	_check("three-sided triangle remains triangle", triangle_result["name"] == "triangle", str(triangle_result))
+	var open_triangle: Array[Vector2] = triangle.duplicate()
+	open_triangle[-1] = triangle[0].lerp(triangle[1], 0.08)
+	var open_triangle_result: Dictionary = recognizer.recognize(open_triangle)
+	_check("open three-sided triangle is not star", open_triangle_result["name"] != "star", str(open_triangle_result))
+
+
+func _sample_edges(vertices: Array[Vector2], samples: int) -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	for edge: int in vertices.size() - 1:
+		for sample: int in samples:
+			points.append(vertices[edge].lerp(vertices[edge + 1], float(sample) / float(samples)))
+	points.append(vertices[-1])
+	return points
+
+
+func _case_outline_star_strokes() -> void:
+	var recognizer: Recognizer = Recognizer.new()
+	var competitors: Recognizer = Recognizer.new()
+	var non_star_templates: Array[Dictionary] = []
+	for template: Dictionary in competitors._templates:
+		if template["name"] != "star":
+			non_star_templates.append(template)
+	competitors._templates = non_star_templates
+	var corners: Array[Vector2] = [
+		Vector2(0.0, -100.0), Vector2(24.0, -33.0),
+		Vector2(95.0, -31.0), Vector2(39.0, 13.0),
+		Vector2(59.0, 81.0), Vector2(0.0, 41.0),
+		Vector2(-59.0, 81.0), Vector2(-39.0, 13.0),
+		Vector2(-95.0, -31.0), Vector2(-24.0, -33.0),
+	]
+	for start: int in 10:
+		for direction: int in [-1, 1]:
+			for freehand: bool in [false, true]:
+				var vertices: Array[Vector2] = []
+				for step: int in 11:
+					var index: int = posmod(start + direction * step, 10)
+					var point: Vector2 = corners[index]
+					if freehand:
+						point *= 1.0 + sin(float(index) * 1.7) * 0.06
+					vertices.append(point)
+				var stroke: Array[Vector2] = _sample_edges(vertices, 12)
+				if freehand:
+					for i: int in stroke.size():
+						stroke[i] += Vector2(sin(float(i) * 0.43), cos(float(i) * 0.31)) * 2.0
+					stroke[-1] = stroke[0].lerp(vertices[1], 0.12)
+					stroke = _add_mouse_noise(stroke, 0)
+				var result: Dictionary = recognizer.recognize(stroke)
+				var competitor: Dictionary = competitors.recognize(stroke)
+				var label: String = "outline start %d direction %d freehand %s" % [start, direction, freehand]
+				_check(label + " -> star", result["name"] == "star", str(result))
+				_check(label + " score >= 0.90", result["score"] >= 0.90, str(result))
+				_check(label + " beats other shapes by 0.08", result["score"] >= competitor["score"] + 0.08, "%s vs %s" % [result, competitor])
+	for curved: bool in [false, true]:
+		var triangle: Array[Vector2] = _closed_triangle(100.0)
+		if curved:
+			for i: int in triangle.size():
+				triangle[i] += Vector2(3.0, -2.0) * sin(PI * float(i % 20) / 20.0)
+		for direction: int in [-1, 1]:
+			var stroke: Array[Vector2] = _reverse_points(triangle) if direction < 0 else triangle
+			var result: Dictionary = recognizer.recognize(stroke)
+			_check("triangle curved %s direction %d remains triangle" % [curved, direction], result["name"] == "triangle" and result["score"] >= 0.90, str(result))
+
+
+func _reverse_points(points: Array[Vector2]) -> Array[Vector2]:
+	var reversed_points: Array[Vector2] = points.duplicate()
+	reversed_points.reverse()
+	return reversed_points
+
+
+func _add_mouse_noise(points: Array[Vector2], variant: int) -> Array[Vector2]:
+	var noisy: Array[Vector2] = []
+	for i: int in points.size():
+		var point: Vector2 = points[i] + Vector2(sin(float(i) * 1.7), cos(float(i) * 1.1)) * float(variant + 1) * 0.55
+		noisy.append(point.rotated(0.17) * 1.2 + Vector2(350.0, -120.0))
+	return noisy
