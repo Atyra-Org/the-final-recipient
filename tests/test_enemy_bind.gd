@@ -43,12 +43,51 @@ func _run() -> void:
 		bus.name = "EventBus"
 		root.add_child(bus)
 	_check("bind signal declared", bus.has_signal(&"enemy_bind_requested"))
+	var plain_enemy: EnemyController = EnemyScene.instantiate() as EnemyController
+	plain_enemy.set_physics_process(false)
+	root.add_child(plain_enemy)
+	_check("debug bind defaults disabled", not plain_enemy.debug_bind_loop_on_start and not plain_enemy.debug_bind_hotkey_enabled and is_equal_approx(plain_enemy.debug_bind_duration, 3.0) and plain_enemy.current_state != EnemyController.State.BOUND)
+	plain_enemy.queue_free()
+	var debug_enemy: EnemyController = EnemyScene.instantiate() as EnemyController
+	debug_enemy.name = "DebugBindEnemy"
+	debug_enemy.debug_bind_loop_on_start = true
+	debug_enemy.set_physics_process(false)
+	root.add_child(debug_enemy)
+	_check("debug startup bind enabled", debug_enemy.current_state == EnemyController.State.BOUND and debug_enemy.bind_timer > 900000.0)
+	_check("debug startup uses down animation", debug_enemy.animated_sprite.animation == &"bind_down")
+	debug_enemy.queue_free()
+	var hotkey_enemy: EnemyController = EnemyScene.instantiate() as EnemyController
+	hotkey_enemy.name = "HotkeyBindEnemy"
+	hotkey_enemy.debug_bind_hotkey_enabled = true
+	hotkey_enemy.debug_bind_duration = 0.75
+	hotkey_enemy.set_physics_process(false)
+	root.add_child(hotkey_enemy)
+	var key_event: InputEventKey = InputEventKey.new()
+	key_event.keycode = KEY_B
+	key_event.pressed = true
+	hotkey_enemy._unhandled_input(key_event)
+	_check("debug B hotkey applies duration", hotkey_enemy.current_state == EnemyController.State.BOUND and is_equal_approx(hotkey_enemy.bind_timer, 0.75))
+	var echo_event: InputEventKey = InputEventKey.new()
+	echo_event.keycode = KEY_B
+	echo_event.pressed = true
+	echo_event.echo = true
+	hotkey_enemy.call(&"_physics_process", 0.2)
+	hotkey_enemy._unhandled_input(echo_event)
+	_check("debug B echo does not retrigger", is_equal_approx(hotkey_enemy.bind_timer, 0.55))
+	var released_event: InputEventKey = InputEventKey.new()
+	released_event.keycode = KEY_B
+	released_event.pressed = false
+	hotkey_enemy._unhandled_input(released_event)
+	_check("debug B release does not retrigger", is_equal_approx(hotkey_enemy.bind_timer, 0.55))
+	hotkey_enemy.queue_free()
 	var enemy: EnemyController = EnemyScene.instantiate() as EnemyController
+	enemy.name = "BindTestEnemy"
 	enemy.use_navigation = false
 	enemy.require_line_of_sight = false
 	root.add_child(enemy)
 	enemy.require_line_of_sight = false
 	var other: EnemyController = EnemyScene.instantiate() as EnemyController
+	other.name = "BindOtherEnemy"
 	other.position = Vector2(1000, 1000)
 	root.add_child(other)
 	other.set_physics_process(false)

@@ -20,7 +20,11 @@ func _init() -> void:
 	add_template("v", [Vector2.ZERO, Vector2(60.0, 100.0), Vector2(120.0, 0.0)])
 	add_template("caret", [Vector2(0.0, 100.0), Vector2(60.0, 0.0), Vector2(120.0, 100.0)])
 	add_template("zigzag", [Vector2.ZERO, Vector2(40.0, 80.0), Vector2(80.0, 0.0), Vector2(120.0, 80.0), Vector2(160.0, 0.0)])
-	add_template("star", [Vector2(60.0, 0.0), Vector2(95.0, 110.0), Vector2(0.0, 42.0), Vector2(120.0, 42.0), Vector2(25.0, 110.0), Vector2(60.0, 0.0)])
+	add_template("star", _star_template(0))
+	add_template("star", _star_template(1))
+	add_template("star", _star_template(2))
+	add_template("star", _star_template(3))
+	add_template("star", _star_template(4))
 
 
 func add_template(template_name: String, points: Array[Vector2]) -> void:
@@ -28,7 +32,7 @@ func add_template(template_name: String, points: Array[Vector2]) -> void:
 	if normalized.is_empty():
 		push_warning("UnistrokeRecognizer: skipped degenerate template '%s'" % template_name)
 		return
-	_templates.append({"name": template_name, "points": normalized})
+	_templates.append({"name": template_name, "points": normalized, "star_variant": template_name == "star" and points[0] == points[-1]})
 
 
 func recognize(points: Array[Vector2]) -> Dictionary:
@@ -38,16 +42,29 @@ func recognize(points: Array[Vector2]) -> Dictionary:
 
 
 	var reversed := normalize(_reversed(points))
+	var closed_points: Array[Vector2] = points.duplicate()
+	var gap: float = points[0].distance_to(points[-1])
+	var open_star: bool = gap > 0.0 and gap <= path_length(points) * 0.12
+	if open_star:
+		closed_points.append(points[0])
+	var closed_candidate: Array[Vector2] = normalize(closed_points) if open_star else candidate
+	var reversed_closed_points: Array[Vector2] = _reversed(closed_points)
+	var reversed_closed: Array[Vector2] = normalize(reversed_closed_points) if open_star else reversed
 
 	var points_down: bool = centroid(resample(points)).y > (points[0].y + points[-1].y) * 0.5
 	var best_name := ""
 	var best_score := 0.0
 	for template in _templates:
+		if template["name"] == "star" and not template["star_variant"]:
+			continue
 		if (template["name"] == "v" and not points_down) or (template["name"] == "caret" and points_down):
 			continue
 		var score := _score_at_best_angle(candidate, template["points"])
 		if not reversed.is_empty():
 			score = maxf(score, _score_at_best_angle(reversed, template["points"]))
+		if template["name"] == "star" and open_star:
+			score = maxf(score, _score_at_best_angle(closed_candidate, template["points"]))
+			score = maxf(score, _score_at_best_angle(reversed_closed, template["points"]))
 		if score > best_score:
 			best_score = score
 			best_name = template["name"]
@@ -215,4 +232,19 @@ func _triangle_template() -> Array[Vector2]:
 	var out: Array[Vector2] = [
 		Vector2.ZERO, Vector2(120.0, 0.0), Vector2(60.0, -104.0), Vector2.ZERO
 	]
+	return out
+
+
+func _star_template(start_corner: int) -> Array[Vector2]:
+	var vertices: Array[Vector2] = [
+		Vector2(60.0, 0.0),
+		Vector2(95.0, 110.0),
+		Vector2(0.0, 42.0),
+		Vector2(120.0, 42.0),
+		Vector2(25.0, 110.0),
+	]
+	var out: Array[Vector2] = []
+	for i: int in 6:
+		var index: int = (start_corner + i) % 5
+		out.append(vertices[index])
 	return out

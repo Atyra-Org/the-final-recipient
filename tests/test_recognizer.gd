@@ -21,6 +21,7 @@ func _initialize() -> void:
 	_check_variants("line_horizontal", [Vector2.ZERO, Vector2(60.0, 0.0), Vector2(120.0, 0.0)])
 	_check_variants("circle", _closed_circle(32, 80.0))
 	_check_variants("triangle", [Vector2.ZERO, Vector2(120.0, 0.0), Vector2(60.0, -104.0), Vector2.ZERO])
+	_case_manual_star_strokes()
 	print("=== %d checks, %d failed ===" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -195,4 +196,53 @@ func _check_variants(gesture_name: String, vertices: Array[Vector2]) -> void:
 			stroke.reverse()
 		var result: Dictionary = recognizer.recognize(stroke)
 		_check("%s variant %d name" % [gesture_name, variant], result["name"] == gesture_name, str(result))
-		_check("%s variant %d score >= 0.90" % [gesture_name, variant], result["score"] >= 0.90, str(result))
+		_check("%s variant %d score >= 0.90" % [gesture_name, variant], result["score"] >= 0.90, str(result["score"]))
+
+
+func _case_manual_star_strokes() -> void:
+	var top: Array[Vector2] = [Vector2(320.0, 20.0), Vector2(361.0, 123.0), Vector2(264.0, 62.0), Vector2(376.0, 55.0), Vector2(284.0, 127.0), Vector2(320.0, 20.0)]
+	var bottom_left: Array[Vector2] = [Vector2(284.0, 127.0), Vector2(320.0, 20.0), Vector2(361.0, 123.0), Vector2(264.0, 62.0), Vector2(376.0, 55.0), Vector2(284.0, 127.0)]
+	var open_star: Array[Vector2] = top.duplicate()
+	open_star[-1] = top[0].lerp(top[1], 0.07)
+	var candidates: Array = [
+		_sample_edges(bottom_left, 14),
+		_sample_edges(top, 14),
+		_sample_edges(_reverse_points(top), 14),
+		_sample_edges(open_star, 14),
+	]
+	var recognizer: Recognizer = Recognizer.new()
+	for i: int in candidates.size():
+		var stroke: Array[Vector2] = _add_mouse_noise(candidates[i], i)
+		var result: Dictionary = recognizer.recognize(stroke)
+		_check("manual star %d -> star" % i, result["name"] == "star", str(result))
+		_check("manual star %d high score" % i, result["score"] >= 0.90, str(result))
+	var triangle: Array[Vector2] = _sample_edges([Vector2(320.0, 20.0), Vector2(376.0, 127.0), Vector2(264.0, 127.0), Vector2(320.0, 20.0)], 24)
+	var triangle_result: Dictionary = recognizer.recognize(triangle)
+	_check("three-sided triangle remains triangle", triangle_result["name"] == "triangle", str(triangle_result))
+	var open_triangle: Array[Vector2] = triangle.duplicate()
+	open_triangle[-1] = triangle[0].lerp(triangle[1], 0.08)
+	var open_triangle_result: Dictionary = recognizer.recognize(open_triangle)
+	_check("open three-sided triangle is not star", open_triangle_result["name"] != "star", str(open_triangle_result))
+
+
+func _sample_edges(vertices: Array[Vector2], samples: int) -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	for edge: int in vertices.size() - 1:
+		for sample: int in samples:
+			points.append(vertices[edge].lerp(vertices[edge + 1], float(sample) / float(samples)))
+	points.append(vertices[-1])
+	return points
+
+
+func _reverse_points(points: Array[Vector2]) -> Array[Vector2]:
+	var reversed_points: Array[Vector2] = points.duplicate()
+	reversed_points.reverse()
+	return reversed_points
+
+
+func _add_mouse_noise(points: Array[Vector2], variant: int) -> Array[Vector2]:
+	var noisy: Array[Vector2] = []
+	for i: int in points.size():
+		var point: Vector2 = points[i] + Vector2(sin(float(i) * 1.7), cos(float(i) * 1.1)) * float(variant + 1) * 0.55
+		noisy.append(point.rotated(0.17) * 1.2 + Vector2(350.0, -120.0))
+	return noisy

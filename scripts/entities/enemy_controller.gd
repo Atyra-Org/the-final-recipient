@@ -48,6 +48,11 @@ enum State {
 @export var freeze_when_observed: bool = false
 @export var observer_fov_angle: float = 75.0
 
+@export_group("Debug")
+@export var debug_bind_loop_on_start: bool = false
+@export var debug_bind_hotkey_enabled: bool = false
+@export var debug_bind_duration: float = 3.0
+
 @onready var detection_area: Area2D = $DetectionArea
 @onready var detection_radius: CollisionShape2D = $DetectionArea/DetectionRadius
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -108,6 +113,13 @@ func _ready() -> void:
 	if event_bus != null:
 		event_bus.connect(&"enemy_bind_requested", _on_enemy_bind_requested)
 		event_bus.emit_signal(&"enemy_spawned", self, _get_enemy_id())
+	if debug_bind_loop_on_start:
+		apply_bind(999999.0)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if debug_bind_hotkey_enabled and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
+		apply_bind(debug_bind_duration)
 
 
 func _apply_data() -> void:
