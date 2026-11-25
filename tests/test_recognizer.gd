@@ -22,6 +22,7 @@ func _initialize() -> void:
 	_check_variants("circle", _closed_circle(32, 80.0))
 	_check_variants("triangle", [Vector2.ZERO, Vector2(120.0, 0.0), Vector2(60.0, -104.0), Vector2.ZERO])
 	_case_manual_star_strokes()
+	_case_outline_star_strokes()
 	print("=== %d checks, %d failed ===" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -232,6 +233,54 @@ func _sample_edges(vertices: Array[Vector2], samples: int) -> Array[Vector2]:
 			points.append(vertices[edge].lerp(vertices[edge + 1], float(sample) / float(samples)))
 	points.append(vertices[-1])
 	return points
+
+
+func _case_outline_star_strokes() -> void:
+	var recognizer: Recognizer = Recognizer.new()
+	var competitors: Recognizer = Recognizer.new()
+	var non_star_templates: Array[Dictionary] = []
+	for template: Dictionary in competitors._templates:
+		if template["name"] != "star":
+			non_star_templates.append(template)
+	competitors._templates = non_star_templates
+	var corners: Array[Vector2] = [
+		Vector2(0.0, -100.0), Vector2(24.0, -33.0),
+		Vector2(95.0, -31.0), Vector2(39.0, 13.0),
+		Vector2(59.0, 81.0), Vector2(0.0, 41.0),
+		Vector2(-59.0, 81.0), Vector2(-39.0, 13.0),
+		Vector2(-95.0, -31.0), Vector2(-24.0, -33.0),
+	]
+	for start: int in 10:
+		for direction: int in [-1, 1]:
+			for freehand: bool in [false, true]:
+				var vertices: Array[Vector2] = []
+				for step: int in 11:
+					var index: int = posmod(start + direction * step, 10)
+					var point: Vector2 = corners[index]
+					if freehand:
+						point *= 1.0 + sin(float(index) * 1.7) * 0.06
+					vertices.append(point)
+				var stroke: Array[Vector2] = _sample_edges(vertices, 12)
+				if freehand:
+					for i: int in stroke.size():
+						stroke[i] += Vector2(sin(float(i) * 0.43), cos(float(i) * 0.31)) * 2.0
+					stroke[-1] = stroke[0].lerp(vertices[1], 0.12)
+					stroke = _add_mouse_noise(stroke, 0)
+				var result: Dictionary = recognizer.recognize(stroke)
+				var competitor: Dictionary = competitors.recognize(stroke)
+				var label: String = "outline start %d direction %d freehand %s" % [start, direction, freehand]
+				_check(label + " -> star", result["name"] == "star", str(result))
+				_check(label + " score >= 0.90", result["score"] >= 0.90, str(result))
+				_check(label + " beats other shapes by 0.08", result["score"] >= competitor["score"] + 0.08, "%s vs %s" % [result, competitor])
+	for curved: bool in [false, true]:
+		var triangle: Array[Vector2] = _closed_triangle(100.0)
+		if curved:
+			for i: int in triangle.size():
+				triangle[i] += Vector2(3.0, -2.0) * sin(PI * float(i % 20) / 20.0)
+		for direction: int in [-1, 1]:
+			var stroke: Array[Vector2] = _reverse_points(triangle) if direction < 0 else triangle
+			var result: Dictionary = recognizer.recognize(stroke)
+			_check("triangle curved %s direction %d remains triangle" % [curved, direction], result["name"] == "triangle" and result["score"] >= 0.90, str(result))
 
 
 func _reverse_points(points: Array[Vector2]) -> Array[Vector2]:
