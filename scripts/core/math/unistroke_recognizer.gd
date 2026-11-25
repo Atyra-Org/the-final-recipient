@@ -17,6 +17,10 @@ func _init() -> void:
 	add_template("line_horizontal", _line_template())
 	add_template("circle", _circle_template())
 	add_template("triangle", _triangle_template())
+	add_template("v", [Vector2.ZERO, Vector2(60.0, 100.0), Vector2(120.0, 0.0)])
+	add_template("caret", [Vector2(0.0, 100.0), Vector2(60.0, 0.0), Vector2(120.0, 100.0)])
+	add_template("zigzag", [Vector2.ZERO, Vector2(40.0, 80.0), Vector2(80.0, 0.0), Vector2(120.0, 80.0), Vector2(160.0, 0.0)])
+	add_template("star", [Vector2(60.0, 0.0), Vector2(95.0, 110.0), Vector2(0.0, 42.0), Vector2(120.0, 42.0), Vector2(25.0, 110.0), Vector2(60.0, 0.0)])
 
 
 func add_template(template_name: String, points: Array[Vector2]) -> void:
@@ -35,9 +39,12 @@ func recognize(points: Array[Vector2]) -> Dictionary:
 
 	var reversed := normalize(_reversed(points))
 
+	var points_down: bool = centroid(resample(points)).y > (points[0].y + points[-1].y) * 0.5
 	var best_name := ""
 	var best_score := 0.0
 	for template in _templates:
+		if (template["name"] == "v" and not points_down) or (template["name"] == "caret" and points_down):
+			continue
 		var score := _score_at_best_angle(candidate, template["points"])
 		if not reversed.is_empty():
 			score = maxf(score, _score_at_best_angle(reversed, template["points"]))

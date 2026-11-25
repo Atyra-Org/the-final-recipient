@@ -29,7 +29,7 @@ func _run() -> void:
 	_check("attack_active_frames", res.attack_active_frames == [1, 2], str(res.attack_active_frames))
 	_check("sprite_frames assigned", res.sprite_frames != null)
 	_check("sprite_frames has run_down", res.sprite_frames.has_animation("run_down") if res.sprite_frames else false)
-	_check("sprite_frames anim count == 11", res.sprite_frames.get_animation_names().size() == 11, str(res.sprite_frames.get_animation_names().size()))
+	_check("sprite_frames anim count == 14", res.sprite_frames.get_animation_names().size() == 14, str(res.sprite_frames.get_animation_names().size()))
 
 	print("=== Scene applies EnemyData to controller ===")
 	var scene: Node = load("res://scenes/sandbox/node_2d.tscn").instantiate()
