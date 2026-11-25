@@ -10,6 +10,9 @@ const KNOCKBACK_TIMER = 1000.0
 const MANA_REGEN_DELAY: float = 5.0
 const MANA_REGEN_INTERVAL: float = 0.15
 const MANA_REGEN_AMOUNT: int = 1
+const ATTACK_COOLDOWN: float = 0.7
+const ATTACK_BUFF_DURATION: float = 10.0
+const ATTACK_BUFF_DAMAGE: int = 15
 
 var input_vector := Vector2.ZERO
 var facing_direction := Vector2.DOWN
@@ -26,11 +29,15 @@ var health: int = 0
 var dash_cooldown_timer: float = 0.0
 var is_dead: bool = false
 var is_hurt: bool = false
-@export var max_mana: int = 500
+@export var max_mana: int = 300
 var mana: int = 0
 var mana_regen_timer: float = 0.0
 var mana_regen_interval_timer: float = 0.0
 var is_regenerating_mana: bool = false
+var attack_cooldown_timer: float = 0.0
+var is_attack_buff_active: bool = false
+var is_buff_attacking: bool = false
+var attack_buff_timer: float = 0.0
 
 @onready var animation_tree: AnimationTree = $AnimationTree
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
@@ -48,7 +55,7 @@ func _ready() -> void:
 	mana = max_mana
 	
 	health_changed.emit(health, max_health)
-	mana_changed.emit(mana, max_health)
+	mana_changed.emit(mana, max_mana)
 
 	state_machine = animation_tree.get("parameters/StateMachine/playback")
 	move_state_machine = animation_tree.get("parameters/StateMachine/MoveState/playback")
@@ -58,6 +65,17 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		return
+		
+	if dash_cooldown_timer > 0.0:
+		dash_cooldown_timer -= delta
+		
+	if attack_cooldown_timer > 0.0:
+		attack_cooldown_timer -= delta
+		
+	if is_buff_attacking:
+		velocity = Vector2.ZERO
+		move_and_slide()
 		return
 		
 	if is_hurt:
@@ -70,6 +88,9 @@ func _physics_process(delta: float) -> void:
 	
 	if dash_cooldown_timer > 0.0:
 		dash_cooldown_timer -= delta
+		
+	if attack_cooldown_timer > 0.0:
+		attack_cooldown_timer -= delta
 
 	if is_attacking:
 		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
@@ -119,19 +140,52 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
 	
-	if event.is_action_pressed("attack") and not is_attacking and not is_hurt and not is_dashing:
+	if event.is_action_pressed("attack") and not is_attacking and not is_hurt and not is_dashing and attack_cooldown_timer <= 0.0:
 		_start_attack()
 
 func _start_attack() -> void:
+	if attack_cooldown_timer > 0.0:
+		return
+	
 	hit_targets.clear()
 	
 	_update_hitbox_position()
-	animation_tree.set("parameters/StateMachine/AttackState/blend_position", facing_direction)
 	
 	is_attacking = true
+	attack_cooldown_timer = ATTACK_COOLDOWN
 	hitbox.monitoring = true
 	
-	state_machine.travel("AttackState")
+	if is_attack_buff_active:
+		_play_buff_attack_animation()
+	else:
+		animation_tree.set("parameters/StateMachine/AttackState/blend_position", facing_direction)
+		state_machine.travel("AttackState")
+		
+func _play_buff_attack_animation() -> void:
+	var animation_name: String
+	
+	if abs(facing_direction.x) > abs(facing_direction.y):
+		if facing_direction.x > 0:
+			animation_name = "attack_buff_right"
+		else:
+			animation_name = "attack_buff_left"
+	else:
+		if facing_direction.y > 0:
+			animation_name = "attack_buff_up"
+		else:
+			animation_name = "attack_buff_down"
+	
+	is_buff_attacking = true
+	
+	animation_tree.active = false
+	animation_player.play(animation_name)
+	
+func _activate_attack_buff() -> void:
+	is_attack_buff_active = true
+	attack_buff_timer = ATTACK_BUFF_DURATION
+	attack_damage = ATTACK_BUFF_DAMAGE
+	
+	print("Attack Buff aktif!")
 	
 func _play_dash_animation() -> void:
 	var animation_name: String
@@ -229,6 +283,7 @@ func take_damage(amount: int, knockback: Vector2) -> void:
 
 	is_hurt = true
 	is_attacking = false
+	is_buff_attacking = false
 
 	hitbox.monitoring = false
 
@@ -281,14 +336,28 @@ func _on_animation_player_animation_finished(anim_name: StringName) -> void:
 		state_machine.travel("MoveState")
 		move_state_machine.travel("IdleState")
 		
+	if anim_name.begins_with("attack_buff_"):
+		hitbox.monitoring = false
+		is_buff_attacking = false
+		is_attacking = false
+		
+		animation_tree.active = true
+		
+		state_machine.travel("MoveState")
+		move_state_machine.travel("IdleState")
+		
 func _on_gesture_recognized(gesture_name: String, score: float) -> void:
 	if is_dead or is_hurt:
 		return
 	
 	match gesture_name:
 		"line_horizontal":
-			if not use_mana(50):
+			if is_attack_buff_active or is_attacking or is_buff_attacking or is_dashing:
 				return
+	
+			if not use_mana(100):
+				return
+	
 			_cast_slash_wave()
 			_reset_mana_regen_delay()
 		"circle":
@@ -304,7 +373,7 @@ func _on_gesture_failed() -> void:
 	print("Pola sihir gagal dikenali")
 
 func _cast_slash_wave() -> void:
-	_start_attack()
+	_activate_attack_buff()
 	
 func _cast_heal_or_shield() -> void:
 	health = clampi(health + 20, 0, max_health)
@@ -330,6 +399,16 @@ func use_mana(amount: int) -> bool:
 	return true
 
 func _process(delta: float) -> void:
+	if is_attack_buff_active:
+		attack_buff_timer -= delta
+	
+		if attack_buff_timer <= 0.0:
+			is_attack_buff_active = false
+			attack_buff_timer = 0.0
+			attack_damage = 10
+			
+			print("Attack Buff berakhir!")
+	
 	if mana >= max_mana:
 		is_regenerating_mana = false
 		mana_regen_timer = 0.0
