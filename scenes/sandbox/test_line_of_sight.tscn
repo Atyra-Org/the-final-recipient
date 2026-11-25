@@ -13,6 +13,7 @@ position = Vector2(141, 205)
 
 [node name="EnemyDummy" parent="." unique_id=2133058415 instance=ExtResource("2_snto7")]
 position = Vector2(311, 207)
+debug_bind_hotkey_enabled = true
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1135149913]
 

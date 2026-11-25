@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b52ay6y3a7vkw"]
 
-[ext_resource type="Script" uid="uid://6s8d6xc7gk1l" path="res://scenes/sandbox/test_lead_core.gd" id="1_sandbox"]
+[ext_resource type="Script" uid="uid://bw4j1c7u74ko7" path="res://scenes/sandbox/test_lead_core.gd" id="1_sandbox"]
 
 [node name="TestLeadCore" type="Node2D" unique_id=1246566895]
 script = ExtResource("1_sandbox")
