@@ -12,6 +12,7 @@
 
 [node name="EnemyDummy" parent="." index="1" unique_id=2133058415 instance=ExtResource("2_r2m2n")]
 position = Vector2(103, -150)
+debug_bind_hotkey_enabled = true
 
 [node name="Player" parent="." index="2" unique_id=1067953716 instance=ExtResource("2_vvvxe")]
 y_sort_enabled = true

@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://da108gklqsvpl" path="res://assets/sprites/characters/AlricBase2.png" id="2_atpat"]
 [ext_resource type="PackedScene" uid="uid://c3hr3ra747o07" path="res://scenes/ui/draw_gesture.tscn" id="2_dyp2m"]
 [ext_resource type="PackedScene" uid="uid://b43ty744bxaec" path="res://scenes/ui/interact_component.tscn" id="3_76oj4"]
+[ext_resource type="PackedScene" uid="uid://cf11yw6a3mvn4" path="res://scenes/ui/magic_book.tscn" id="5_atpat"]
 
 [sub_resource type="Animation" id="Animation_yewv4"]
 length = 0.001
@@ -1111,6 +1112,10 @@ position_smoothing_enabled = true
 position_smoothing_speed = 7.0
 
 [node name="DrawGesture" parent="." unique_id=527038483 instance=ExtResource("2_dyp2m")]
+layer = 6
+
+[node name="MagicBook" parent="." unique_id=2052501240 instance=ExtResource("5_atpat")]
+layer = 5
 
 [connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_player_animation_finished"]
 [connection signal="animation_finished" from="AnimationTree" to="." method="_on_animation_tree_animation_finished"]
