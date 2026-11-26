@@ -5,6 +5,14 @@
 [node name="DrawGesture" type="CanvasLayer" unique_id=527038483]
 script = ExtResource("1_kcbdq")
 
-[node name="TrailLine" type="Line2D" parent="." unique_id=2108651045]
+[node name="ClipArea" type="Control" parent="." unique_id=1370061755]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 0
+offset_right = 320.0
+offset_bottom = 230.0
+mouse_filter = 2
+
+[node name="TrailLine" type="Line2D" parent="ClipArea" unique_id=2108651045]
 width = 4.0
 default_color = Color(0, 0, 0, 1)

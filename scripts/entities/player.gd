@@ -4,15 +4,16 @@ const WALK_SPEED = 85.0
 # const RUN_SPEED = 170.0
 const DASH_DURATION = 0.2
 const DASH_SPEED = 360.0
-const DASH_COOLDOWN = 1.5
+const DASH_COOLDOWN = 2
 const KNOCKBACK_FORCE = 250.0
 const KNOCKBACK_TIMER = 1000.0
 const MANA_REGEN_DELAY: float = 5.0
 const MANA_REGEN_INTERVAL: float = 0.15
 const MANA_REGEN_AMOUNT: int = 1
-const ATTACK_COOLDOWN: float = 0.7
+const ATTACK_COOLDOWN: float = 0.8
 const ATTACK_BUFF_DURATION: float = 10.0
 const ATTACK_BUFF_DAMAGE: int = 15
+const BIND_DURATION: float = 10.0
 
 var input_vector := Vector2.ZERO
 var facing_direction := Vector2.DOWN
@@ -38,11 +39,13 @@ var attack_cooldown_timer: float = 0.0
 var is_attack_buff_active: bool = false
 var is_buff_attacking: bool = false
 var attack_buff_timer: float = 0.0
+var is_selecting_bind_target: bool = false
 
 @onready var animation_tree: AnimationTree = $AnimationTree
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
+@onready var magic_book: MagicBook = $MagicBook
 var state_machine: AnimationNodeStateMachinePlayback
 var move_state_machine: AnimationNodeStateMachinePlayback
 signal health_changed(current_health, max_health)
@@ -67,6 +70,11 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 		
+	if magic_book.is_open:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+		
 	if dash_cooldown_timer > 0.0:
 		dash_cooldown_timer -= delta
 		
@@ -82,9 +90,14 @@ func _physics_process(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, KNOCKBACK_TIMER * delta)
 		move_and_slide()
 		return
-	
+
 	var current_state = state_machine.get_current_node()
 	is_attacking = (current_state == "AttackState")
+
+	if is_attacking:
+		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
+		move_and_slide()
+		return
 	
 	if dash_cooldown_timer > 0.0:
 		dash_cooldown_timer -= delta
@@ -140,6 +153,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
 	
+	if event.is_action_pressed("open_book"):
+		magic_book.toggle_book()
+		get_viewport().set_input_as_handled()
+		return
+	
+	if magic_book.is_open:
+		return
+	
+	if is_selecting_bind_target:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_select_bind_target()
+			get_viewport().set_input_as_handled()
+		return
+		
 	if event.is_action_pressed("attack") and not is_attacking and not is_hurt and not is_dashing and attack_cooldown_timer <= 0.0:
 		_start_attack()
 
@@ -360,15 +387,33 @@ func _on_gesture_recognized(gesture_name: String, score: float) -> void:
 	
 			_cast_slash_wave()
 			_reset_mana_regen_delay()
+			
 		"circle":
 			if not use_mana(50):
 				return
 			_cast_heal_or_shield()
 			_reset_mana_regen_delay()
+			
 		"triangle":
+			if not use_mana(50):
+				return
 			_cast_piercing_burst()
 			_reset_mana_regen_delay()
+			
+		"star":
+			if is_attacking or is_buff_attacking or is_dashing or is_selecting_bind_target:
+				return
+				
+			if not use_mana(65):
+				return
+				
+			_activate_bind_selection()
+			_reset_mana_regen_delay()
 		
+func _activate_bind_selection() -> void:
+	is_selecting_bind_target = true
+	print("Bind aktif! Klik musuh yang ingin kamu ikat.")
+
 func _on_gesture_failed() -> void:
 	print("Pola sihir gagal dikenali")
 
@@ -401,7 +446,7 @@ func use_mana(amount: int) -> bool:
 func _process(delta: float) -> void:
 	if is_attack_buff_active:
 		attack_buff_timer -= delta
-	
+
 		if attack_buff_timer <= 0.0:
 			is_attack_buff_active = false
 			attack_buff_timer = 0.0
@@ -424,7 +469,7 @@ func _process(delta: float) -> void:
 			
 	else:
 		mana_regen_interval_timer += delta
-	
+
 	while mana_regen_interval_timer >= MANA_REGEN_INTERVAL and mana < max_mana:
 		mana_regen_interval_timer -= MANA_REGEN_INTERVAL
 		mana = mini(mana + MANA_REGEN_AMOUNT, max_mana)
@@ -440,3 +485,26 @@ func _reset_mana_regen_delay() -> void:
 	is_regenerating_mana = false
 	mana_regen_timer = 0.0
 	mana_regen_interval_timer = 0.0
+
+func _select_bind_target() -> void:
+	var space_state = get_world_2d().direct_space_state
+	var mouse_position = get_global_mouse_position()
+	
+	var query = PhysicsPointQueryParameters2D.new()
+	query.position = mouse_position
+	query.collide_with_bodies = true
+	
+	var results = space_state.intersect_point(query)
+	
+	for result in results:
+		var enemy = result["collider"]
+		
+		while enemy != null and not enemy.is_in_group("enemy"):
+			enemy = enemy.get_parent()
+		
+		if enemy == null:
+			continue
+			
+		EventBus.enemy_bind_requested.emit(enemy, BIND_DURATION)
+		is_selecting_bind_target = false
+		return
