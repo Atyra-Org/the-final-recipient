@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://br81nheuoyihg" path="res://scenes/characters/player.tscn" id="1_4uehk"]
 [ext_resource type="PackedScene" uid="uid://msnusmqk7bcc" path="res://scenes/characters/enemy_dummy.tscn" id="2_snto7"]
+[ext_resource type="Resource" uid="uid://bb4sybo742tfx" path="res://resources/enemies/greedy_gremlin_2.tres" id="3_snto7"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ft4xp"]
 size = Vector2(7.5, 183)
@@ -13,6 +14,7 @@ position = Vector2(141, 205)
 
 [node name="EnemyDummy" parent="." unique_id=2133058415 instance=ExtResource("2_snto7")]
 position = Vector2(311, 207)
+data = ExtResource("3_snto7")
 debug_bind_hotkey_enabled = true
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1135149913]
