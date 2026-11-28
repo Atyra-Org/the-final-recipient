@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 EventBus="*uid://bsnifwa3krwh7"
 GameManager="*uid://dfocfds28s0mi"
+GameFlow="*res://scripts/core/game_flow.gd"
 
 [display]
 
