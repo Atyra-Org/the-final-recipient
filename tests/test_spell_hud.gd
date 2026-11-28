@@ -32,6 +32,32 @@ func _run() -> void:
 	root.add_child(player)
 	await process_frame
 	_check("shown with player", bool(hud.get("visible")))
+	_check("guide expanded initially", bool(hud.call("is_guide_expanded")))
+	var toggle_key: InputEventKey = InputEventKey.new()
+	toggle_key.keycode = KEY_J
+	toggle_key.pressed = true
+	hud.call("_input", toggle_key)
+	_check("J collapses guide and keeps HUD visible", not bool(hud.call("is_guide_expanded")) and bool(hud.get("visible")))
+	_check("collapsed badge shown when collapsed", hud.get_node(^"DrawingControl") != null and hud.call("is_guide_expanded") == false)
+	toggle_key.echo = true
+	hud.call("_input", toggle_key)
+	_check("echo J does not toggle guide", not bool(hud.call("is_guide_expanded")))
+	toggle_key.echo = false
+	var manager: Node = root.get_node_or_null(^"GameManager")
+	if manager != null:
+		manager.set("current_state", 0)
+	root.get_tree().paused = true
+	hud.call("_input", toggle_key)
+	_check("J ignored while paused", not bool(hud.call("is_guide_expanded")))
+	if manager != null:
+		manager.set("current_state", 3)
+	root.get_tree().paused = false
+	hud.call("_input", toggle_key)
+	_check("J ignored in game over state", not bool(hud.call("is_guide_expanded")))
+	if manager != null:
+		manager.set("current_state", 0)
+	hud.call("_input", toggle_key)
+	_check("J expands guide", bool(hud.call("is_guide_expanded")))
 	_check("HUD controls ignore mouse", _controls_ignore_mouse(hud))
 	_check("full rect drawing control", (hud.get_node(^"DrawingControl") as Control).anchors_preset == Control.PRESET_FULL_RECT)
 	_check("low mana dims costly spell", not bool(hud.call("is_spell_ready", "line_horizontal")) and bool(hud.call("is_spell_ready", "circle")))

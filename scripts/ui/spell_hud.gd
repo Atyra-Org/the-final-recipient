@@ -1,10 +1,10 @@
 extends CanvasLayer
 
 const SPELLS: Array[Dictionary] = [
-	{"id": "line_horizontal", "name": "ARCANE BOLT", "mana": 100},
-	{"id": "circle", "name": "ARCANE BURST", "mana": 50},
-	{"id": "triangle", "name": "ARCANE WARD", "mana": 50},
-	{"id": "star", "name": "STAR BIND", "mana": 65}
+	{"id": "line_horizontal", "name": "ARCANE BOLT", "effect": "DASH BURST", "mana": 100},
+	{"id": "circle", "name": "ARCANE BURST", "effect": "HEAL", "mana": 50},
+	{"id": "triangle", "name": "ARCANE WARD", "effect": "ATK BUFF", "mana": 50},
+	{"id": "star", "name": "STAR BIND", "effect": "STAR BIND", "mana": 65}
 ]
 
 var _player: Node
@@ -16,7 +16,29 @@ var _cards: Dictionary = {}
 var _font: Font = preload("res://assets/fonts/monogram/ttf/monogram.ttf")
 var _canvas: Control
 var _hud_modulate: Color = Color.WHITE
+var _guide_expanded: bool = true
 var _panel_position: Vector2 = Vector2.ZERO
+
+func toggle_guide() -> void:
+	_guide_expanded = not _guide_expanded
+	if _canvas != null:
+		_canvas.queue_redraw()
+
+func is_guide_expanded() -> bool:
+	return _guide_expanded
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event.keycode != KEY_J or not key_event.pressed or key_event.echo:
+		return
+	if get_tree().paused:
+		return
+	var manager: Node = get_tree().root.get_node_or_null(^"GameManager")
+	if manager != null and int(manager.get("current_state")) in [1, 3]:
+		return
+	toggle_guide()
 
 func _on_scene_changed() -> void:
 	_player = null
@@ -114,7 +136,7 @@ func _process(delta: float) -> void:
 	if _canvas != null:
 		_canvas.visible = visible
 		var viewport_size: Vector2 = _canvas.get_viewport_rect().size
-		_panel_position = Vector2(maxf(16.0, viewport_size.x - 208.0), maxf(16.0, viewport_size.y - 128.0))
+		_panel_position = Vector2(maxf(16.0, viewport_size.x - minf(360.0, viewport_size.x - 32.0) - 16.0), 16.0)
 		_canvas.queue_redraw()
 
 func is_spell_ready(spell_id: String) -> bool:
@@ -176,28 +198,43 @@ func _draw_hud() -> void:
 		return
 	var canvas: Control = _canvas
 	var viewport_size: Vector2 = canvas.get_viewport_rect().size
-	var panel_width: float = minf(192.0, viewport_size.x - 32.0)
-	var panel_height: float = minf(112.0, viewport_size.y - 32.0)
-	var origin: Vector2 = Vector2(maxf(16.0, viewport_size.x - panel_width - 16.0), maxf(16.0, viewport_size.y - panel_height - 16.0))
-	canvas.draw_rect(Rect2(origin, Vector2(panel_width, panel_height)), Color(0.035, 0.025, 0.06, 0.88), true)
-	canvas.draw_rect(Rect2(origin, Vector2(panel_width, panel_height)), Color(0.55, 0.35, 0.75), false, 1.0)
-	canvas.draw_string(_font, origin + Vector2(7.0, 15.0), "SPELL GUIDE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.94, 0.84, 1.0))
-	for index: int in SPELLS.size():
-		var spell: Dictionary = SPELLS[index]
-		var card_origin: Vector2 = origin + Vector2(7.0, 20.0 + float(index) * 19.0)
-		var ready: bool = is_spell_ready(String(spell["id"]))
-		var highlighted: bool = is_spell_highlighted(String(spell["id"]))
-		var color: Color = Color(0.98, 0.78, 1.0) if highlighted else (Color(0.82, 0.91, 0.7) if ready else Color(0.45, 0.43, 0.5))
-		if highlighted:
-			canvas.draw_rect(Rect2(card_origin - Vector2(3.0, 12.0), Vector2(panel_width - 8.0, 17.0)), Color(0.42, 0.22, 0.55, 0.7), true)
-		_draw_gesture(canvas, String(spell["id"]), card_origin + Vector2(8.0, -6.0), color)
-		canvas.draw_string(_font, card_origin + Vector2(21.0, 0.0), String(spell["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, color)
-		canvas.draw_string(_font, card_origin + Vector2(panel_width - 42.0, 0.0), "%d MP" % int(spell["mana"]), HORIZONTAL_ALIGNMENT_RIGHT, 38, 9, color)
-	var buff_text: String = "ATTACK BUFF: ACTIVE" if is_buff_active() else "ATTACK BUFF: --"
-	canvas.draw_string(_font, origin + Vector2(7.0, panel_height - 13.0), buff_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.9, 0.75, 0.4))
+	var panel_width: float = minf(360.0, viewport_size.x - 32.0)
+	var panel_height: float = minf(208.0, viewport_size.y - 32.0)
+	var origin: Vector2 = _panel_position
+	if _guide_expanded:
+		var panel_rect: Rect2 = Rect2(origin, Vector2(panel_width, panel_height))
+		canvas.draw_rect(panel_rect, Color(0.08, 0.06, 0.12, 0.90), true)
+		canvas.draw_rect(panel_rect, Color(0.66, 0.53, 0.28, 1.0), false, 2.0)
+		canvas.draw_string(_font, origin + Vector2(12.0, 20.0), "SPELL GUIDE  [J]", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.96, 0.9, 0.72))
+		canvas.draw_line(origin + Vector2(10.0, 28.0), origin + Vector2(panel_width - 10.0, 28.0), Color(0.55, 0.43, 0.33, 0.9), 1.0)
+		for index: int in SPELLS.size():
+			var spell: Dictionary = SPELLS[index]
+			var row_origin: Vector2 = origin + Vector2(12.0, 52.0 + float(index) * 34.0)
+			var mana_color: Color = Color(0.35, 0.95, 1.0) if is_spell_ready(String(spell["id"])) else Color(0.42, 0.45, 0.5)
+			var highlighted: bool = is_spell_highlighted(String(spell["id"]))
+			if highlighted:
+				canvas.draw_rect(Rect2(row_origin - Vector2(5.0, 17.0), Vector2(panel_width - 24.0, 32.0)), Color(0.3, 0.19, 0.42, 0.82), true)
+			_draw_gesture(canvas, String(spell["id"]), row_origin + Vector2(10.0, -4.0), Color(0.95, 0.78, 0.4) if highlighted else Color(0.83, 0.76, 0.92))
+			canvas.draw_string(_font, row_origin + Vector2(28.0, -3.0), String(spell["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1.0, 0.96, 0.9))
+			canvas.draw_string(_font, row_origin + Vector2(28.0, 12.0), String(spell["effect"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.7, 0.66, 0.74))
+			canvas.draw_string(_font, row_origin + Vector2(panel_width - 100.0, 1.0), "%d MP" % int(spell["mana"]), HORIZONTAL_ALIGNMENT_RIGHT, 76, 16, mana_color)
+		canvas.draw_line(origin + Vector2(10.0, panel_height - 26.0), origin + Vector2(panel_width - 10.0, panel_height - 26.0), Color(0.55, 0.43, 0.33, 0.9), 1.0)
+		var buff_text: String = "BUFF: ACTIVE" if is_buff_active() else ("BUFF: READY" if _player != null else "BUFF: OFF")
+		canvas.draw_string(_font, origin + Vector2(12.0, panel_height - 7.0), buff_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1.0, 0.78, 0.35) if is_buff_active() else Color(0.71, 0.68, 0.74))
+	else:
+		var badge_size: Vector2 = Vector2(96.0, 26.0)
+		var badge_origin: Vector2 = origin
+		var badge_rect: Rect2 = Rect2(badge_origin, badge_size)
+		canvas.draw_rect(badge_rect, Color(0.08, 0.06, 0.12, 0.90), true)
+		canvas.draw_rect(badge_rect, Color(0.66, 0.53, 0.28, 1.0), false, 2.0)
+		canvas.draw_string(_font, badge_origin + Vector2(9.0, 19.0), "[J] SPELLS", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.96, 0.9, 0.72))
 	if not _feedback_text.is_empty():
-		var feedback_color: Color = Color(1.0, 0.45, 0.38) if _feedback_text == "RUNE FAILED" else Color(0.75, 1.0, 0.65)
-		canvas.draw_string(_font, origin + Vector2(7.0, panel_height - 2.0), _feedback_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, feedback_color)
+		var feedback_color: Color = Color(1.0, 0.48, 0.42) if _feedback_text == "RUNE FAILED" else Color(0.76, 1.0, 0.67)
+		var feedback_size: Vector2 = Vector2(240.0, 26.0)
+		var feedback_origin: Vector2 = Vector2(maxf(16.0, viewport_size.x - feedback_size.x - 16.0), origin.y + (panel_height if _guide_expanded else 34.0))
+		canvas.draw_rect(Rect2(feedback_origin, feedback_size), Color(0.08, 0.06, 0.12, 0.94), true)
+		canvas.draw_rect(Rect2(feedback_origin, feedback_size), Color(0.66, 0.53, 0.28, 1.0), false, 1.0)
+		canvas.draw_string(_font, feedback_origin + Vector2(10.0, 19.0), _feedback_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, feedback_color)
 
 func _draw_gesture(canvas: Control, spell_id: String, center: Vector2, color: Color) -> void:
 	match spell_id:
