@@ -4,6 +4,7 @@ class_name EndScreen
 const MAIN_MENU_PATH: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var overlay: ColorRect = $Root/Overlay
+@onready var root_control: Control = $Root
 @onready var title_label: Label = $Root/Center/Content/Title
 @onready var subtitle_label: Label = $Root/Center/Content/Subtitle
 @onready var primary_button: Button = $Root/Center/Content/Buttons/Primary
@@ -14,6 +15,10 @@ var mode: String = ""
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
+	root_control.visible = false
+	overlay.visible = false
+	overlay.modulate.a = 0.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	primary_button.pressed.connect(_on_primary_pressed)
 	secondary_button.pressed.connect(_on_secondary_pressed)
 
@@ -38,10 +43,16 @@ func show_game_over() -> void:
 func hide_screen() -> void:
 	mode = ""
 	visible = false
+	root_control.visible = false
+	overlay.visible = false
 	overlay.modulate.a = 0.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _show() -> void:
 	visible = true
+	root_control.visible = true
+	overlay.visible = true
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.modulate.a = 0.0
 	var tween: Tween = create_tween()
 	tween.tween_property(overlay, "modulate:a", 0.82, 0.35)

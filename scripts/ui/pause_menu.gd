@@ -4,6 +4,7 @@ class_name PauseMenu
 const MAIN_MENU_PATH: String = "res://scenes/ui/main_menu.tscn"
 
 @onready var panel: PanelContainer = $Root/Center/Panel
+@onready var shade: ColorRect = $Root/Shade
 @onready var resume_button: Button = $Root/Center/Panel/Content/Resume
 @onready var restart_button: Button = $Root/Center/Panel/Content/Restart
 @onready var main_menu_button: Button = $Root/Center/Panel/Content/MainMenu
@@ -13,6 +14,9 @@ var is_visible_menu: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = false
+	shade.hide()
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.hide()
 	is_visible_menu = false
 	resume_button.pressed.connect(resume_game)
@@ -36,11 +40,17 @@ func toggle_pause() -> void:
 	else:
 		_set_game_state(1)
 		is_visible_menu = true
+		visible = true
+		shade.show()
+		shade.mouse_filter = Control.MOUSE_FILTER_STOP
 		panel.show()
 
 func resume_game() -> void:
 	_set_game_state(0)
 	is_visible_menu = false
+	visible = false
+	shade.hide()
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.hide()
 
 func restart_game() -> void:
