@@ -15,26 +15,51 @@ const SPELLS: Array[Dictionary] = [
 ]
 
 var _player: Node
+var _event_bus: Node
 var _feedback_text: String = ""
 var _highlighted_spell: String = ""
 var _feedback_timer: float = 0.0
 var _cards: Dictionary = {}
 var _font: Font = preload("res://assets/fonts/monogram/ttf/monogram.ttf")
 var _canvas: DrawingControl
+var _hud_modulate: Color = Color.WHITE
 
 func _ready() -> void:
 	layer = 20
 	visible = false
+	_hud_modulate.a = 1.0
 	_canvas = get_node_or_null(^"DrawingControl") as DrawingControl
 	if _canvas != null:
+		_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_canvas.modulate = _hud_modulate
 		_canvas.hud = self
-	var bus: Node = get_tree().root.get_node_or_null(^"EventBus")
-	if bus != null:
-		if bus.has_signal(&"gesture_recognized") and not bus.is_connected(&"gesture_recognized", _on_gesture_recognized):
-			bus.connect(&"gesture_recognized", _on_gesture_recognized)
-		if bus.has_signal(&"gesture_failed") and not bus.is_connected(&"gesture_failed", _on_gesture_failed):
-			bus.connect(&"gesture_failed", _on_gesture_failed)
+	_set_event_bus(get_tree().root.get_node_or_null(^"EventBus"))
+	get_tree().node_added.connect(_on_tree_node_added)
 	set_process(true)
+
+func _exit_tree() -> void:
+	if is_inside_tree() and get_tree().node_added.is_connected(_on_tree_node_added):
+		get_tree().node_added.disconnect(_on_tree_node_added)
+	_set_event_bus(null)
+
+func _on_tree_node_added(node: Node) -> void:
+	if node.name == &"EventBus":
+		_set_event_bus(node)
+
+func _set_event_bus(bus: Node) -> void:
+	if _event_bus == bus:
+		return
+	if _event_bus != null:
+		if _event_bus.has_signal(&"gesture_recognized") and _event_bus.is_connected(&"gesture_recognized", _on_gesture_recognized):
+			_event_bus.disconnect(&"gesture_recognized", _on_gesture_recognized)
+		if _event_bus.has_signal(&"gesture_failed") and _event_bus.is_connected(&"gesture_failed", _on_gesture_failed):
+			_event_bus.disconnect(&"gesture_failed", _on_gesture_failed)
+	_event_bus = bus
+	if _event_bus != null:
+		if _event_bus.has_signal(&"gesture_recognized") and not _event_bus.is_connected(&"gesture_recognized", _on_gesture_recognized):
+			_event_bus.connect(&"gesture_recognized", _on_gesture_recognized)
+		if _event_bus.has_signal(&"gesture_failed") and not _event_bus.is_connected(&"gesture_failed", _on_gesture_failed):
+			_event_bus.connect(&"gesture_failed", _on_gesture_failed)
 
 func _process(delta: float) -> void:
 	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
@@ -48,12 +73,18 @@ func _process(delta: float) -> void:
 		if _player == null:
 			_feedback_text = ""
 			_feedback_timer = 0.0
-	visible = _player != null
+			visible = false
+	elif _player == null and _feedback_timer <= 0.0:
+		visible = false
+	if _player != null:
+		visible = true
 	if _feedback_timer > 0.0:
 		_feedback_timer = maxf(0.0, _feedback_timer - delta)
 		if _feedback_timer == 0.0:
 			_feedback_text = ""
+			visible = _player != null
 	if _canvas != null:
+		_canvas.visible = visible
 		_canvas.queue_redraw()
 
 func is_spell_ready(spell_id: String) -> bool:
@@ -82,11 +113,23 @@ func _on_gesture_recognized(spell_id: String, score: float) -> void:
 	_highlighted_spell = spell_id
 	_feedback_text = "CAST: %s (%d%%)" % [String(spell["name"]), roundi(score * 100.0)]
 	_feedback_timer = 1.0
+	visible = true
+	_hud_modulate.a = 1.0
+	if _canvas != null:
+		_canvas.visible = true
+		_canvas.modulate = _hud_modulate
+		_canvas.queue_redraw()
 
 func _on_gesture_failed() -> void:
 	_highlighted_spell = ""
 	_feedback_text = "RUNE FAILED"
 	_feedback_timer = 1.0
+	visible = true
+	_hud_modulate.a = 1.0
+	if _canvas != null:
+		_canvas.visible = true
+		_canvas.modulate = _hud_modulate
+		_canvas.queue_redraw()
 
 func _on_mana_changed(_current_mana: int, _maximum_mana: int) -> void:
 	if _canvas != null:
