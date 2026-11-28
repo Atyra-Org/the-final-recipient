@@ -23,6 +23,7 @@ var _cards: Dictionary = {}
 var _font: Font = preload("res://assets/fonts/monogram/ttf/monogram.ttf")
 var _canvas: DrawingControl
 var _hud_modulate: Color = Color.WHITE
+var _panel_position: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	layer = 30
@@ -37,6 +38,19 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_tree_node_added)
 	set_process(true)
 
+func _find_player(node: Node) -> Node:
+	if node.is_in_group(&"player") or node.name.to_lower() == "player":
+		return node
+	for property: Dictionary in node.get_property_list():
+		if property.get("name") == "mana":
+			if node.get("is_attack_buff_active") != null:
+				return node
+	for child: Node in node.get_children():
+		var found: Node = _find_player(child)
+		if found != null:
+			return found
+	return null
+
 func _exit_tree() -> void:
 	if is_inside_tree() and get_tree().node_added.is_connected(_on_tree_node_added):
 		get_tree().node_added.disconnect(_on_tree_node_added)
@@ -45,8 +59,8 @@ func _exit_tree() -> void:
 func _on_tree_node_added(node: Node) -> void:
 	if node.name == &"EventBus":
 		_set_event_bus(node)
-	elif node.is_in_group(&"player") or node.name == &"Player":
-		_player = node
+	elif _find_player(node) != null:
+		_player = _find_player(node)
 		visible = true
 		if _canvas != null:
 			_canvas.queue_redraw()
@@ -69,12 +83,9 @@ func _set_event_bus(bus: Node) -> void:
 func _process(delta: float) -> void:
 	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
 	var next_player: Node = players[0] if not players.is_empty() else null
-	if next_player == null:
-		var scene_root: Node = get_tree().current_scene
-		if scene_root != null and scene_root.name != &"MainMenu":
-			next_player = scene_root.find_child("Player", true, false)
-		if next_player == null and scene_root != null and scene_root.name != &"MainMenu":
-			next_player = get_tree().root.get_node_or_null(^"Player")
+	var scene_root: Node = get_tree().current_scene
+	if next_player == null and scene_root != null and scene_root.name != &"MainMenu":
+		next_player = _find_player(scene_root)
 	if next_player != _player:
 		if _player != null and _player.has_signal(&"mana_changed") and _player.is_connected(&"mana_changed", _on_mana_changed):
 			_player.disconnect(&"mana_changed", _on_mana_changed)
@@ -96,6 +107,8 @@ func _process(delta: float) -> void:
 			visible = _player != null
 	if _canvas != null:
 		_canvas.visible = visible
+		var viewport_size: Vector2 = _canvas.get_viewport_rect().size
+		_panel_position = Vector2(maxf(16.0, viewport_size.x - 208.0), maxf(16.0, viewport_size.y - 128.0))
 		_canvas.queue_redraw()
 
 func is_spell_ready(spell_id: String) -> bool:
@@ -152,7 +165,7 @@ func _draw_hud(canvas: Control) -> void:
 	var viewport_size: Vector2 = canvas.get_viewport_rect().size
 	var panel_width: float = 192.0
 	var panel_height: float = 112.0
-	var origin: Vector2 = Vector2(viewport_size.x - panel_width - 8.0, viewport_size.y - panel_height - 8.0)
+	var origin: Vector2 = _panel_position
 	canvas.draw_rect(Rect2(origin, Vector2(panel_width, panel_height)), Color(0.035, 0.025, 0.06, 0.88), true)
 	canvas.draw_rect(Rect2(origin, Vector2(panel_width, panel_height)), Color(0.55, 0.35, 0.75), false, 1.0)
 	canvas.draw_string(_font, origin + Vector2(7.0, 15.0), "SPELL GUIDE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.94, 0.84, 1.0))

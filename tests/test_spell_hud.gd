@@ -33,6 +33,7 @@ func _run() -> void:
 	await process_frame
 	_check("shown with player", bool(hud.get("visible")))
 	_check("HUD controls ignore mouse", _controls_ignore_mouse(hud))
+	_check("full rect drawing control", (hud.get_node(^"DrawingControl") as Control).anchors_preset == Control.PRESET_FULL_RECT)
 	_check("low mana dims costly spell", not bool(hud.call("is_spell_ready", "line_horizontal")) and bool(hud.call("is_spell_ready", "circle")))
 	player.mana = 100
 	player.mana_changed.emit(player.mana, player.max_mana)
@@ -52,11 +53,13 @@ func _run() -> void:
 	var replacement_player: TestPlayer = TestPlayer.new()
 	replacement_player.name = "Player"
 	replacement_player.mana = 65
+	replacement_player.is_attack_buff_active = true
 	gameplay.add_child(replacement_player)
 	player.remove_from_group(&"player")
 	player.queue_free()
 	await process_frame
 	_check("scene switch refreshed player state", bool(hud.call("is_spell_ready", "star")) and bool(hud.get("visible")))
+	_check("named player discovered without group", bool(hud.call("is_buff_active")))
 	if bus != null:
 		bus.emit_signal(&"gesture_recognized", "circle", 0.91)
 	_check("event bus remains connected after scene switch", str(hud.call("get_feedback_text")).contains("CAST: ARCANE BURST (91%)") and bool(hud.call("is_spell_highlighted", "circle")))
