@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://deuj4qql4qjef"
-path="res://.godot/imported/spritesheet.png-efee92c86c37835e938378a922cf4bc9.ctex"
+uid="uid://tipaxeqec2l2"
+path="res://.godot/imported/greedy_gremlin_2_bind.png-6cad6843886926f6c0f7c95509f4d6d4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/effects/spritesheet.png"
-dest_files=["res://.godot/imported/spritesheet.png-efee92c86c37835e938378a922cf4bc9.ctex"]
+source_file="res://assets/sprites/effects/greedy_gremlin_2_bind.png"
+dest_files=["res://.godot/imported/greedy_gremlin_2_bind.png-6cad6843886926f6c0f7c95509f4d6d4.ctex"]
 
 [params]
 
