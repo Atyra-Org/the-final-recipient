@@ -1,12 +1,5 @@
 extends CanvasLayer
 
-class DrawingControl extends Control:
-	var hud: CanvasLayer
-
-	func _draw() -> void:
-		if hud != null:
-			hud.call("_draw_hud", self)
-
 const SPELLS: Array[Dictionary] = [
 	{"id": "line_horizontal", "name": "ARCANE BOLT", "mana": 100},
 	{"id": "circle", "name": "ARCANE BURST", "mana": 50},
@@ -21,21 +14,32 @@ var _highlighted_spell: String = ""
 var _feedback_timer: float = 0.0
 var _cards: Dictionary = {}
 var _font: Font = preload("res://assets/fonts/monogram/ttf/monogram.ttf")
-var _canvas: DrawingControl
+var _canvas: Control
 var _hud_modulate: Color = Color.WHITE
 var _panel_position: Vector2 = Vector2.ZERO
 
+func _on_scene_changed() -> void:
+	_player = null
+	var scene_root: Node = get_tree().current_scene
+	visible = scene_root != null and scene_root.name != &"MainMenu"
+	if _canvas != null:
+		_canvas.visible = visible
+		_canvas.queue_redraw()
+
 func _ready() -> void:
 	layer = 30
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_hud_modulate.a = 1.0
-	_canvas = get_node_or_null(^"DrawingControl") as DrawingControl
+	_canvas = get_node_or_null(^"DrawingControl") as Control
 	if _canvas != null:
 		_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_canvas.modulate = _hud_modulate
-		_canvas.hud = self
+		_canvas.draw.connect(_draw_hud)
 	_set_event_bus(get_tree().root.get_node_or_null(^"EventBus"))
 	get_tree().node_added.connect(_on_tree_node_added)
+	get_tree().scene_changed.connect(_on_scene_changed)
+	_on_scene_changed()
 	set_process(true)
 
 func _find_player(node: Node) -> Node:
@@ -54,6 +58,8 @@ func _find_player(node: Node) -> Node:
 func _exit_tree() -> void:
 	if is_inside_tree() and get_tree().node_added.is_connected(_on_tree_node_added):
 		get_tree().node_added.disconnect(_on_tree_node_added)
+	if is_inside_tree() and get_tree().scene_changed.is_connected(_on_scene_changed):
+		get_tree().scene_changed.disconnect(_on_scene_changed)
 	_set_event_bus(null)
 
 func _on_tree_node_added(node: Node) -> void:
@@ -133,6 +139,12 @@ func _spell_for(spell_id: String) -> Dictionary:
 func _on_gesture_recognized(spell_id: String, score: float) -> void:
 	var spell: Dictionary = _spell_for(spell_id)
 	if spell.is_empty():
+		_feedback_text = "RUNE FAILED"
+		_feedback_timer = 1.0
+		visible = true
+		if _canvas != null:
+			_canvas.visible = true
+			_canvas.queue_redraw()
 		return
 	_highlighted_spell = spell_id
 	_feedback_text = "CAST: %s (%d%%)" % [String(spell["name"]), roundi(score * 100.0)]
@@ -159,13 +171,14 @@ func _on_mana_changed(_current_mana: int, _maximum_mana: int) -> void:
 	if _canvas != null:
 		_canvas.queue_redraw()
 
-func _draw_hud(canvas: Control) -> void:
-	if not visible:
+func _draw_hud() -> void:
+	if not visible or _canvas == null:
 		return
+	var canvas: Control = _canvas
 	var viewport_size: Vector2 = canvas.get_viewport_rect().size
-	var panel_width: float = 192.0
-	var panel_height: float = 112.0
-	var origin: Vector2 = _panel_position
+	var panel_width: float = minf(192.0, viewport_size.x - 32.0)
+	var panel_height: float = minf(112.0, viewport_size.y - 32.0)
+	var origin: Vector2 = Vector2(maxf(16.0, viewport_size.x - panel_width - 16.0), maxf(16.0, viewport_size.y - panel_height - 16.0))
 	canvas.draw_rect(Rect2(origin, Vector2(panel_width, panel_height)), Color(0.035, 0.025, 0.06, 0.88), true)
 	canvas.draw_rect(Rect2(origin, Vector2(panel_width, panel_height)), Color(0.55, 0.35, 0.75), false, 1.0)
 	canvas.draw_string(_font, origin + Vector2(7.0, 15.0), "SPELL GUIDE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.94, 0.84, 1.0))
@@ -179,12 +192,12 @@ func _draw_hud(canvas: Control) -> void:
 			canvas.draw_rect(Rect2(card_origin - Vector2(3.0, 12.0), Vector2(panel_width - 8.0, 17.0)), Color(0.42, 0.22, 0.55, 0.7), true)
 		_draw_gesture(canvas, String(spell["id"]), card_origin + Vector2(8.0, -6.0), color)
 		canvas.draw_string(_font, card_origin + Vector2(21.0, 0.0), String(spell["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, color)
-		canvas.draw_string(_font, card_origin + Vector2(146.0, 0.0), "%d MP" % int(spell["mana"]), HORIZONTAL_ALIGNMENT_RIGHT, 38, 9, color)
+		canvas.draw_string(_font, card_origin + Vector2(panel_width - 42.0, 0.0), "%d MP" % int(spell["mana"]), HORIZONTAL_ALIGNMENT_RIGHT, 38, 9, color)
 	var buff_text: String = "ATTACK BUFF: ACTIVE" if is_buff_active() else "ATTACK BUFF: --"
-	canvas.draw_string(_font, origin + Vector2(7.0, 99.0), buff_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.9, 0.75, 0.4))
+	canvas.draw_string(_font, origin + Vector2(7.0, panel_height - 13.0), buff_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.9, 0.75, 0.4))
 	if not _feedback_text.is_empty():
 		var feedback_color: Color = Color(1.0, 0.45, 0.38) if _feedback_text == "RUNE FAILED" else Color(0.75, 1.0, 0.65)
-		canvas.draw_string(_font, origin + Vector2(7.0, 110.0), _feedback_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, feedback_color)
+		canvas.draw_string(_font, origin + Vector2(7.0, panel_height - 2.0), _feedback_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, feedback_color)
 
 func _draw_gesture(canvas: Control, spell_id: String, center: Vector2, color: Color) -> void:
 	match spell_id:
