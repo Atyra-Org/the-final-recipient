@@ -48,9 +48,10 @@ func _run() -> void:
 	var gameplay: Node = Node.new()
 	gameplay.name = "GameplayTest"
 	root.add_child(gameplay)
+	set_current_scene(gameplay)
 	var replacement_player: TestPlayer = TestPlayer.new()
+	replacement_player.name = "Player"
 	replacement_player.mana = 65
-	replacement_player.add_to_group(&"player")
 	gameplay.add_child(replacement_player)
 	player.remove_from_group(&"player")
 	player.queue_free()
